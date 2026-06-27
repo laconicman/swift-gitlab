@@ -1,0 +1,22 @@
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Xcode
+*.xcodeproj/
+*.xcworkspace/
+DerivedData/
+
+# macOS
+.DS_Store
+
+# Editor
+*.swp
+.vscode/
+.idea/
+
+# NOTE: committed on purpose (not build-plugin output):
+#   Sources/GitLabOpenAPI/openapi.yaml                    — vendored, normalized spec
+#   Sources/GitLabKit/Types+Identifiable.generated.swift  — emitted by gitlab-spec-tool
+# The generated Client.swift / Types.swift live under .build and are NOT committed.

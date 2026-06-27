@@ -1,0 +1,15 @@
+# TIER: full (~1,721 operations) — PRESERVED template, not used by the build plugin
+# (excluded in Package.swift; the plugin only loads `openapi-generator-config.yaml`).
+#
+# "full" = the ENTIRE GitLab REST API: no `filter:`, every tag/operation. This generates a
+# very large client (~300k-line Types.swift, multi-minute compile, heavy to browse). Use it
+# only when you genuinely need the whole surface; prefer `review` (active) or `core`.
+# To activate, copy this over `openapi-generator-config.yaml` and rebuild.
+generate:
+  - types
+  - client
+accessModifier: public
+namingStrategy: idiomatic
+additionalFileComments:
+  - "swiftlint:disable all"
+# No `filter:` — generate everything.

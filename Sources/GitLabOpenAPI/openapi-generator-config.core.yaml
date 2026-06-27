@@ -1,0 +1,46 @@
+# TIER: core (~494 operations) — PRESERVED template, not used by the build plugin
+# (excluded in Package.swift; the plugin only loads `openapi-generator-config.yaml`).
+#
+# "core" = the review surface PLUS general project/group/user/issue/CI management. It pulls
+# most of the 2,532 schemas, so Types.swift is ~157k lines (~2.5-min compile). Use it when
+# you need broader coverage than the active `review` tier. To activate, copy this over
+# `openapi-generator-config.yaml` and rebuild. See the DocC "Design" article for the tiers.
+generate:
+  - types
+  - client
+accessModifier: public
+namingStrategy: idiomatic
+additionalFileComments:
+  - "swiftlint:disable all"
+filter:
+  tags:
+    # --- Code review ---
+    - Merge requests
+    - Merge request approvals
+    - Approval rules
+    - Project approvals
+    - Notes
+    - Discussions
+    - Draft notes
+    - Award emoji
+    - Commit statuses
+    - Merge trains
+    - Code review analytics
+    # --- Core repository / project ---
+    - Projects
+    - Repositories
+    - Files
+    - Commits
+    - Branches
+    - Protected branches
+    - Tags
+    - Labels
+    - Milestones
+    # --- CI ---
+    - Pipelines
+    - Jobs
+    # --- Identity / collaboration ---
+    - Users
+    - Groups
+    - Members
+    - Issues

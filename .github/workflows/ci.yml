@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Build & test (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Swift version
+        run: swift --version
+      # Runs the swift-openapi-generator build plugin (offline, from the vendored spec).
+      - name: Build
+        run: swift build
+      # Offline tests only; the live tests are gated behind GITLAB_LIVE_TESTS.
+      - name: Test
+        run: swift test

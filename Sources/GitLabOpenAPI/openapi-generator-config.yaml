@@ -1,0 +1,40 @@
+# ACTIVE config — TIER: review (~218 operations). Used by the swift-openapi-generator build
+# plugin (it loads exactly this filename).
+#
+# Tier set (copy a template over this file to switch; see the DocC "Design" article):
+#   review (this) ~218 ops  — code review + minimal repository context for diffs
+#   core          ~494 ops  — review + project/group/user/issue/CI management
+#                             (openapi-generator-config.core.yaml)
+#   full        ~1,721 ops  — the entire API, no filter
+#                             (openapi-generator-config.full.yaml)
+#
+# Widen coverage by adding tags here, or by activating a larger tier.
+generate:
+  - types
+  - client
+accessModifier: public
+namingStrategy: idiomatic        # nice Swift names; relies on the spec normalization below
+additionalFileComments:
+  - "swiftlint:disable all"
+# NOTE: `namingStrategy: idiomatic` collides on GitLab's dual `scope` enums, which accept
+# both `created-by-me` and `created_by_me` (both map to `createdByMe`). The vendored
+# `openapi.yaml` is normalized to drop the redundant hyphenated variants (GitLab accepts
+# the underscore forms). Normalization is applied by `swift run gitlab-spec-tool`; see the
+# DocC "Tech Debt" article.
+filter:
+  tags:
+    # --- Code review (the core deliverable) ---
+    - Merge requests
+    - Merge request approvals
+    - Approval rules
+    - Notes              # comments (add/edit/delete) on MRs and commits
+    - Discussions        # threaded / resolvable review threads
+    - Draft notes        # pending review comments
+    - Award emoji        # reactions on MRs / notes
+    - Commit statuses     # CI status shown on an MR
+    - Merge trains
+    - Code review analytics
+    # --- Minimal repository context for reviewing diffs ---
+    - Commits            # commit diffs + commit-level discussions
+    - Branches           # MR source/target branches
+    - Repositories       # tree / blobs / compare (diffs)

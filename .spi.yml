@@ -1,0 +1,8 @@
+# Swift Package Index configuration — https://swiftpackageindex.com/SwiftPackageIndex/SPIManifest
+# Builds and hosts the DocC documentation for the façade target (Design / Roadmap /
+# Tech Debt / Upstream Spec Fix articles live in GitLabKit.docc).
+version: 1
+builder:
+  configs:
+    - documentation_targets:
+        - GitLabKit

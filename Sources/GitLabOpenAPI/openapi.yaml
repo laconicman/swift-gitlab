@@ -83003,7 +83003,9 @@ components:
           format: date-time
           example: '2022-01-31T15:10:44.988Z'
         suggestions:
-          "$ref": "#/components/schemas/APIEntitiesSuggestion"
+          type: array
+          items:
+            "$ref": "#/components/schemas/APIEntitiesSuggestion"
         confidential:
           type: boolean
           example: false
@@ -83035,7 +83037,9 @@ components:
         resolved:
           type: boolean
         notes:
-          "$ref": "#/components/schemas/APIEntitiesNote"
+          type: array
+          items:
+            "$ref": "#/components/schemas/APIEntitiesNote"
     APIEntitiesWikiPageBasic:
       type: object
       properties:

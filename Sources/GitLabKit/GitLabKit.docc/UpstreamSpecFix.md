@@ -49,3 +49,7 @@ When the upstream fix is correct, `gitlab-spec-tool` reports **`array fields ret
 **`list responses retyped: 0`** for the fixed areas — the retyping has nothing left to do.
 At that point the local mitigation can be narrowed or removed (see <doc:Roadmap>), and we pin
 `--ref` to the fixed revision so we never "re-fix" an already-correct spec.
+
+
+## Some strange default servers in the spec
+Reconsider using OpenAPI standards and guidelines.

@@ -34,7 +34,9 @@ struct GitLabSpecTool {
     static let identifiableOutput = "Sources/GitLabKit/Types+Identifiable.generated.swift"
 
     /// Entity properties that are arrays at runtime but under-typed as a single `$ref`.
-    static let arrayFieldNames: Set<String> = ["assignees", "reviewers"]
+    /// `notes` (discussion) and `suggestions` (note) were surfaced by the laconic-review
+    /// connector's discussions read; the live decode test now covers discussions to catch more.
+    static let arrayFieldNames: Set<String> = ["assignees", "reviewers", "notes", "suggestions"]
 
     struct Stats { var enumTwins = 0; var fields = 0; var responses = 0 }
 

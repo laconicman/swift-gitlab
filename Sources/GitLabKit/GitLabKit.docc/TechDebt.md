@@ -72,3 +72,13 @@ config changes and stays out of the incremental loop for façade/app code.
 `Package.swift` so the plugin (which matches the exact filename `openapi-generator-config.yaml`)
 never sees it. It can fall out of date relative to the active filter — treat it as a
 reference snapshot, not a maintained alternate.
+
+## 6. Client initializer shapes — reconsider
+
+`init(token:hostname:)` forces `https://{hostname}` (the spec's server template), so HTTP-only
+or non-standard-port hosts can't use it — which is why `init(token:serverURL:)` was added. The
+URL-based init is the general form; revisit making it primary and demoting `hostname:` to a thin
+convenience over it.
+
+## 7. Some strange servers are generated from the ``openapi.yaml``
+See `Servers` enum. Might be upstream issue.

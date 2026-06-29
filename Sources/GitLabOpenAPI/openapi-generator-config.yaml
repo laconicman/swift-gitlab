@@ -22,6 +22,10 @@ additionalFileComments:
 # the underscore forms). Normalization is applied by `swift run gitlab-spec-tool`; see the
 # DocC "Tech Debt" article.
 filter:
+  # Pulled in by operation id because `/user` is tagged `Users` (outside this tier). Used by
+  # laconic-review's `whoami` connectivity check; keeps the tier lean (one op, not the tag).
+  operations:
+    - getApiV4User
   tags:
     # --- Code review (the core deliverable) ---
     - Merge requests

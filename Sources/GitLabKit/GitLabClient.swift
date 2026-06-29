@@ -33,4 +33,34 @@ public extension Client {
             ]
         )
     }
+
+    /// Creates a GitLab REST API client pointed at an explicit server URL.
+    ///
+    /// Use this for self-managed instances that aren't reachable as `https://{hostname}` —
+    /// e.g. an HTTP-only or non-standard-port host such as `http://git.example.lab`. The
+    /// ``init(token:hostname:bodyLoggingPolicy:)`` convenience always builds an `https://`
+    /// URL from the spec's server template; this initializer takes the root URL verbatim.
+    ///
+    /// - Parameters:
+    ///   - token: A GitLab Personal/Project/Group Access Token (or OAuth2 access token),
+    ///     sent as `Authorization: Bearer <token>`.
+    ///   - serverURL: The API **root** (scheme + host [+ port]) only, e.g.
+    ///     `URL(string: "http://git.example.lab")!`. The generated operations append the
+    ///     `/api/v4/...` path themselves, matching the spec's `https://{hostname}` server.
+    ///   - bodyLoggingPolicy: How much of request/response bodies to log via OSLog.
+    init(
+        token: String,
+        serverURL: URL,
+        bodyLoggingPolicy: BodyLoggingPolicy = .never
+    ) {
+        self.init(
+            serverURL: serverURL,
+            configuration: Configuration(dateTranscoder: GitLabDateTranscoder()),
+            transport: URLSessionTransport(),
+            middlewares: [
+                HeaderMiddleware(bearerToken: token),
+                OSLogLoggingMiddleware(bodyLoggingConfiguration: bodyLoggingPolicy),
+            ]
+        )
+    }
 }

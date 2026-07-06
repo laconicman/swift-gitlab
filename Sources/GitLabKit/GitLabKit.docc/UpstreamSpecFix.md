@@ -6,6 +6,11 @@ GitLab that retires our local retyping. Pick this up when there's time to contri
 > Pasteable **issue drafts** and **PR handoffs** (for this, the scalar mismatch, and the
 > anonymous `RequestBody_<hash>` schemas) live in the repo's `Upstream/` directory. This
 > article is the overview; that folder holds the ready-to-file artifacts.
+>
+> Status (2026-07-03): all three are filed upstream —
+> [#604895](https://gitlab.com/gitlab-org/gitlab/-/issues/604895) (arrays),
+> [#604896](https://gitlab.com/gitlab-org/gitlab/-/issues/604896) (scalars),
+> [#604897](https://gitlab.com/gitlab-org/gitlab/-/issues/604897) (`RequestBody_<hash>` naming).
 
 ## The claim to make in the PR
 

@@ -4,6 +4,7 @@
 [![Platforms](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Flaconicman%2Fswift-gitlab%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/laconicman/swift-gitlab)
 [![Latest tag](https://img.shields.io/github/v/tag/laconicman/swift-gitlab?label=release&sort=semver)](https://github.com/laconicman/swift-gitlab/tags)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache_2.0-blue.svg)](LICENSE.txt)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/laconicman/swift-gitlab)
 
 A modern, type-safe, async/await **GitLab REST API client** for Apple platforms, generated
 from GitLab's official [OpenAPI spec](https://docs.gitlab.com/api/openapi/) with Apple's

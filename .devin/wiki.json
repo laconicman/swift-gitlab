@@ -1,0 +1,16 @@
+{
+  "repo_notes": [
+    {
+      "content": "SCOPE — what this repository is and is not. The repository is named swift-gitlab; its principal product is GitLabKit, a type-safe async/await GitLab REST API client for Apple platforms. It is not a GitLab server, is not affiliated with GitLab Inc., and does not hand-write its API surface. The bulk of the tree is not authored here: Sources/GitLabOpenAPI/openapi.yaml is GitLab's official OpenAPI specification, vendored, and Sources/GitLabOpenAPI/Generated.swift plus the operations it exposes are produced from it by Apple's swift-openapi-generator at build time. Do NOT generate pages enumerating GitLab API endpoints or describing generated operation types as though this project designed them. The authored surface is small and is where documentation belongs: Sources/GitLabKit/ — GitLabClient.swift, HeaderMiddleware.swift, GitLabDateTranscoder.swift, Types+Identifiable.generated.swift and Types+examples.swift — plus the spec tooling in Sources/gitlab-spec-tool/.",
+      "author": "maintainer"
+    },
+    {
+      "content": "AUTHORITATIVE SOURCES, in precedence order. The DocC catalogue at Sources/GitLabKit/GitLabKit.docc/ holds the direction documents and outranks inference from the tree: Design.md carries the decisions and their rejected alternatives, Roadmap.md the plan, TechDebt.md the numbered register, and UpstreamSpecFix.md the record of corrections this project makes to GitLab's published specification. Upstream/ holds the defect reports filed against that specification — anonymous-request-bodies.md and array-and-scalar-under-typing.md — and describes flaws in GitLab's spec, not in this client; treat it as one topic, the upstream-reporting practice. README.md is the consumer-facing entry point.",
+      "author": "maintainer"
+    },
+    {
+      "content": "CONSUMER CONSTRAINTS that any useful page set must convey. API coverage is a build-time choice rather than a limitation, and the tier system is the single most important thing a consumer must understand: the package ships the review tier by default at roughly 218 operations, and a consumer switches by copying openapi-generator-config.core.yaml (about 494 operations) or openapi-generator-config.full.yaml (the whole API, about 1,721 operations) over Sources/GitLabOpenAPI/openapi-generator-config.yaml and rebuilding. The default tier covers merge requests, approvals, notes, discussions, draft notes, award emoji, commits, branches and repository diffs. Compile time is the reason the default is not full coverage. The client targets Swift 6 and iOS 16 / macOS 13 / tvOS 16 / watchOS 9, is constructed with a token and an optional hostname for self-managed instances, and takes a body-logging policy for debugging. Licensing is Apache 2.0 per LICENSE.txt.",
+      "author": "maintainer"
+    }
+  ]
+}

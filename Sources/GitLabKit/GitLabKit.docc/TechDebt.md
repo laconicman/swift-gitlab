@@ -28,9 +28,11 @@ single object. This shows up in **two** places:
   (`arrayFieldNames`) is curated, so a newly-surfaced under-typed field needs adding there.
 - **A second flavor — scalar mismatches.** The under-typing isn't only array-vs-object. The
   `liveDecodeReviewEntities` auto-catch found `milestone.group_id` typed `String` but returned
-  as a *number*. The array retyper doesn't fix scalar mismatches; they're whack-a-mole to
-  patch locally, so for now the auto-catch test **reports** them (recorded known issues) and
-  the real fix is upstream. A targeted scalar-retype map in the tool is a possible future add.
+  as a *number*; `fetch` in laconic-review found `head_pipeline.coverage` typed `number` but
+  returned as `"98.29"`. The tool's `stringFieldNames` map retypes number→string where the
+  API proves stringly (guard: `type: number` + `format: float`, so request-side numeric
+  fields pass through). Anything that escapes the map the auto-catch test **reports**
+  (recorded known issues); the real fix is upstream.
 - The fix at the source retires all of this — see <doc:UpstreamSpecFix>.
 
 ## 2. Spec normalization for idiomatic naming

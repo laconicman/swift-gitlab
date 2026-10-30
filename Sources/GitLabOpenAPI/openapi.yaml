@@ -79586,9 +79586,8 @@ components:
           description: Time spent enqueued in seconds
           example: 63
         coverage:
-          type: number
-          format: float
-          example: 98.29
+          type: string
+          example: '98.29'
         detailed_status:
           "$ref": "#/components/schemas/DetailedStatusEntity"
         archived:
@@ -87796,9 +87795,8 @@ components:
         tag:
           type: boolean
         coverage:
-          type: number
-          format: float
-          example: 98.29
+          type: string
+          example: '98.29'
         allow_failure:
           type: boolean
         created_at:
@@ -88323,9 +88321,8 @@ components:
           type: boolean
           example: false
         coverage:
-          type: number
-          format: float
-          example: 98.29
+          type: string
+          example: '98.29'
         pipeline_id:
           type: integer
           format: int64
@@ -88653,9 +88650,8 @@ components:
           description: Time spent enqueued in seconds
           example: 63
         coverage:
-          type: number
-          format: float
-          example: 98.29
+          type: string
+          example: '98.29'
         detailed_status:
           "$ref": "#/components/schemas/DetailedStatusEntity"
         archived:
@@ -88686,9 +88682,8 @@ components:
         tag:
           type: boolean
         coverage:
-          type: number
-          format: float
-          example: 98.29
+          type: string
+          example: '98.29'
         allow_failure:
           type: boolean
         created_at:
@@ -88996,9 +88991,8 @@ components:
         tag:
           type: boolean
         coverage:
-          type: number
-          format: float
-          example: 98.29
+          type: string
+          example: '98.29'
         allow_failure:
           type: boolean
         created_at:
@@ -89315,9 +89309,8 @@ components:
         tag:
           type: boolean
         coverage:
-          type: number
-          format: float
-          example: 98.29
+          type: string
+          example: '98.29'
         allow_failure:
           type: boolean
         created_at:

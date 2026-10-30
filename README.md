@@ -71,10 +71,10 @@ logging uses [`OSLogLoggingMiddleware`](https://github.com/laconicman/OSLogLoggi
 > **Response decoding.** GitLab's *published* spec under-types arrays — list endpoints and
 > fields like `assignees`/`reviewers` are typed as single objects, which would break decoding.
 > GitLabKit ships a **normalized spec** (`gitlab-spec-tool` retypes them), so list endpoints and
-> array fields **decode correctly out of the box**. One residual class remains — scalar
-> mismatches such as `milestone.group_id` (spec says `String`, the API returns a number) — and
-> the opt-in `liveDecodeReviewEntities` test reports any it finds. See the **Tech Debt** doc and
-> `Upstream/` for the fixes in flight.
+> array fields **decode correctly out of the box**. Scalar mismatches are handled field by
+> field — `coverage` (spec says number, the API returns `"98.29"`) is retyped to string via
+> `stringFieldNames`; the opt-in `liveDecodeReviewEntities` test reports any it finds
+> (e.g. `milestone.group_id`). See the **Tech Debt** doc and `Upstream/` for the fixes in flight.
 
 ## Layout
 

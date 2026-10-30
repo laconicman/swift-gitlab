@@ -57,6 +57,17 @@ struct ClientMockTransportTests {
         #expect(captured.headerFields[.authorization] == "Bearer test-token")
     }
 
+    /// The `session:` convenience parameter exists so callers can inject a proxy-configured
+    /// (or test-double) `URLSession` — verify it actually reaches the transport rather than
+    /// being silently dropped (`Client.transport` is private; the shared helper is the seam).
+    @Test("a caller-provided session becomes the transport's session")
+    func customSession() {
+        let session = URLSession(configuration: .ephemeral)
+        let transport = Client.makeTransport(session: session)
+        #expect(transport.configuration.session === session)
+        #expect(Client.makeTransport(session: nil).configuration.session === URLSession.shared)
+    }
+
     /// An unauthenticated (or token-authenticated) client for the opt-in live tests, plus the
     /// project to target. Defaults to a public `gitlab.com` repo; set `GITLAB_TOKEN` +
     /// `GITLAB_HOST` (e.g. `git.flat.lab`) + `GITLAB_PROJECT` to hit your own instance.

@@ -79587,7 +79587,7 @@ components:
           example: 63
         coverage:
           type: string
-          example: 98.29
+          example: '98.29'
         detailed_status:
           "$ref": "#/components/schemas/DetailedStatusEntity"
         archived:
@@ -87796,7 +87796,7 @@ components:
           type: boolean
         coverage:
           type: string
-          example: 98.29
+          example: '98.29'
         allow_failure:
           type: boolean
         created_at:
@@ -88322,7 +88322,7 @@ components:
           example: false
         coverage:
           type: string
-          example: 98.29
+          example: '98.29'
         pipeline_id:
           type: integer
           format: int64
@@ -88651,7 +88651,7 @@ components:
           example: 63
         coverage:
           type: string
-          example: 98.29
+          example: '98.29'
         detailed_status:
           "$ref": "#/components/schemas/DetailedStatusEntity"
         archived:
@@ -88683,7 +88683,7 @@ components:
           type: boolean
         coverage:
           type: string
-          example: 98.29
+          example: '98.29'
         allow_failure:
           type: boolean
         created_at:
@@ -88992,7 +88992,7 @@ components:
           type: boolean
         coverage:
           type: string
-          example: 98.29
+          example: '98.29'
         allow_failure:
           type: boolean
         created_at:
@@ -89310,7 +89310,7 @@ components:
           type: boolean
         coverage:
           type: string
-          example: 98.29
+          example: '98.29'
         allow_failure:
           type: boolean
         created_at:

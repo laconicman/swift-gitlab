@@ -318,7 +318,9 @@ struct GitLabSpecTool {
         m["type"] = "string"
         m["format"] = nil   // assigning nil removes the key in Yams' Mapping
         if let example = m["example"]?.string, Double(example) != nil {
-            m["example"] = Node(example)
+            // A plain "98.29" scalar would re-read as a number under type: string —
+            // force a quoted style so the example stays honest.
+            m["example"] = .scalar(.init(example, Tag(.str), .singleQuoted))
         }
         return .mapping(m)
     }

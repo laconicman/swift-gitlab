@@ -79586,8 +79586,7 @@ components:
           description: Time spent enqueued in seconds
           example: 63
         coverage:
-          type: number
-          format: float
+          type: string
           example: 98.29
         detailed_status:
           "$ref": "#/components/schemas/DetailedStatusEntity"
@@ -87796,8 +87795,7 @@ components:
         tag:
           type: boolean
         coverage:
-          type: number
-          format: float
+          type: string
           example: 98.29
         allow_failure:
           type: boolean
@@ -88323,8 +88321,7 @@ components:
           type: boolean
           example: false
         coverage:
-          type: number
-          format: float
+          type: string
           example: 98.29
         pipeline_id:
           type: integer
@@ -88653,8 +88650,7 @@ components:
           description: Time spent enqueued in seconds
           example: 63
         coverage:
-          type: number
-          format: float
+          type: string
           example: 98.29
         detailed_status:
           "$ref": "#/components/schemas/DetailedStatusEntity"
@@ -88686,8 +88682,7 @@ components:
         tag:
           type: boolean
         coverage:
-          type: number
-          format: float
+          type: string
           example: 98.29
         allow_failure:
           type: boolean
@@ -88996,8 +88991,7 @@ components:
         tag:
           type: boolean
         coverage:
-          type: number
-          format: float
+          type: string
           example: 98.29
         allow_failure:
           type: boolean
@@ -89315,8 +89309,7 @@ components:
         tag:
           type: boolean
         coverage:
-          type: number
-          format: float
+          type: string
           example: 98.29
         allow_failure:
           type: boolean

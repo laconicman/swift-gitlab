@@ -20,12 +20,15 @@ import FoundationNetworking
 ///                    as a single object (`assignees`, `reviewers`).
 ///  3. List bodies  — retype paginated GET 200 responses (those with a `page`/`per_page`
 ///                    query param) from a single entity to an array of that entity.
+///  4. String fields — retype entity properties the API returns as strings but the spec
+///                    types as numbers (`coverage` arrives as "98.29", not 98.29).
 ///
-/// All three are **idempotent and harmless on a correctly-typed spec**: each is guarded
-/// (`isSingleRef`, or "twin exists"), so an already-array field/response or an already-deduped
-/// enum passes through unchanged. If GitLab fixes the spec upstream, this tool becomes a
-/// no-op retyping-wise — pin `--ref` to that fixed revision and the retyping simply finds
-/// nothing to do. (Verify with `--no-fetch`: a second run reports `0 / 0 / 0`.)
+/// All four are **idempotent and harmless on a correctly-typed spec**: each is guarded
+/// (`isSingleRef`, "twin exists", or `isFloatTyped`), so an already-array field/response, an
+/// already-string field, or an already-deduped enum passes through unchanged. If GitLab fixes
+/// the spec upstream, this tool becomes a no-op retyping-wise — pin `--ref` to that fixed
+/// revision and the retyping simply finds nothing to do. (Verify with `--no-fetch`: a second
+/// run reports `0 / 0 / 0 / 0`.)
 @main
 struct GitLabSpecTool {
     static let specBaseURL = "https://gitlab.com/gitlab-org/gitlab/-/raw"
@@ -38,7 +41,13 @@ struct GitLabSpecTool {
     /// connector's discussions read; the live decode test now covers discussions to catch more.
     static let arrayFieldNames: Set<String> = ["assignees", "reviewers", "notes", "suggestions"]
 
-    struct Stats { var enumTwins = 0; var fields = 0; var responses = 0 }
+    /// Entity properties that are strings at runtime but the spec types `number`/`float`.
+    /// `coverage` was surfaced by the MR read: `head_pipeline.coverage` arrives as "98.29".
+    /// The request-side `coverage` field (update-a-job) is typed `number` WITHOUT
+    /// `format: float` and legitimately accepts a number, so the guard is both keys.
+    static let stringFieldNames: Set<String> = ["coverage"]
+
+    struct Stats { var enumTwins = 0; var fields = 0; var responses = 0; var stringFields = 0 }
 
     static func main() async throws {
         // Hand-rolled parsing (keeps the tool dependency-light): `--no-fetch`, `--ref <value>`,
@@ -87,6 +96,7 @@ struct GitLabSpecTool {
           enum twins removed:     \(stats.enumTwins)
           array fields retyped:   \(stats.fields)
           list responses retyped: \(stats.responses)
+          string fields retyped:  \(stats.stringFields)
         Wrote \(identifiableOutput)
           Identifiable conformances: \(conformances)
         """
@@ -220,6 +230,8 @@ struct GitLabSpecTool {
                     }
                 case let k? where arrayFieldNames.contains(k):
                     if isSingleRef(newValue) { newValue = arrayOf(newValue); stats.fields += 1 }
+                case let k? where stringFieldNames.contains(k):
+                    if isFloatTyped(newValue) { newValue = stringTyped(newValue); stats.stringFields += 1 }
                 default:
                     break
                 }
@@ -290,6 +302,25 @@ struct GitLabSpecTool {
 
     static func arrayOf(_ ref: Node) -> Node {
         ["type": "array", "items": ref]
+    }
+
+    /// `type: number` AND `format: float` — the shape GitLab mistypes for string-valued
+    /// fields. A plain `number` (request-side coverage) passes through untouched.
+    static func isFloatTyped(_ node: Node) -> Bool {
+        guard case .mapping(let m) = node else { return false }
+        return m["type"]?.string == "number" && m["format"]?.string == "float"
+    }
+
+    /// `type: number, format: float` → `type: string`; a numeric `example` becomes a
+    /// string scalar so it stays valid for the new type.
+    static func stringTyped(_ node: Node) -> Node {
+        guard case .mapping(var m) = node else { return node }
+        m["type"] = "string"
+        m["format"] = nil   // assigning nil removes the key in Yams' Mapping
+        if let example = m["example"]?.string, Double(example) != nil {
+            m["example"] = Node(example)
+        }
+        return .mapping(m)
     }
 
     static func dedupedEnumTwins(_ seq: Node.Sequence) -> (Node.Sequence, Int) {

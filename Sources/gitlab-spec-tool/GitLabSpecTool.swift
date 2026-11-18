@@ -23,13 +23,19 @@ import FoundationNetworking
 ///                    query param) from a single entity to an array of that entity.
 ///  4. String fields — retype entity properties the API returns as strings but the spec
 ///                    types as numbers (`coverage` arrives as "98.29", not 98.29).
+///  5. Scalar fields — retype curated entity properties the API returns as integers
+///                    or booleans but the spec types as strings (`milestone.group_id`
+///                    arrives as a number, `author.show_status` as true/false — both
+///                    documented `string` because the upstream `expose` lacks a
+///                    `documentation: { type: }`).
 ///
-/// All four are **idempotent and harmless on a correctly-typed spec**: each is guarded
-/// (`isSingleRef`, "twin exists", or `isFloatTyped`), so an already-array field/response, an
-/// already-string field, or an already-deduped enum passes through unchanged. If GitLab fixes
+/// All five are **idempotent and harmless on a correctly-typed spec**: each is guarded
+/// (`isSingleRef`, "twin exists", `isFloatTyped`, `isStringTyped`), so an
+/// already-array field/response, an already-string/integer field, or an
+/// already-deduped enum passes through unchanged. If GitLab fixes
 /// the spec upstream, this tool becomes a no-op retyping-wise — pin `--ref` to that fixed
 /// revision and the retyping simply finds nothing to do. (Verify with `--no-fetch`: a second
-/// run reports `0 / 0 / 0 / 0`.)
+/// run reports `0 / 0 / 0 / 0 / 0`.)
 @main
 struct GitLabSpecTool {
     static let specBaseURL = "https://gitlab.com/gitlab-org/gitlab/-/raw"
@@ -51,7 +57,41 @@ struct GitLabSpecTool {
     /// `format: float` and legitimately accepts a number, so the guard is both keys.
     static let stringFieldNames: Set<String> = ["coverage"]
 
-    struct Stats { var enumTwins = 0; var fields = 0; var responses = 0; var stringFields = 0 }
+    /// `(schema, property) → runtime type` retypes for fields the API returns as
+    /// integers/booleans but the spec types `string` — gitlab-org/gitlab#604896.
+    /// Scoped by schema name inside `components/schemas`, so request bodies and
+    /// unrelated same-named fields are untouched. Every entry was verified against
+    /// GitLab's entity sources (`lib/api/entities/**`, `app/models/project.rb`,
+    /// `app/serializers/concerns/user_status_tooltip.rb`). Deliberately excluded
+    /// lookalikes that are legitimately strings: `APIEntitiesCiRunnerDetails.
+    /// access_level` (`"not_protected"`/`"ref_protected"` enum) and
+    /// `APIEntitiesOrganizationsOrganizationUser.access_level` (`"owner"` etc.),
+    /// plus `EpicBaseEntity.group_id` — that entity types `id`/`iid`/`group_id` all
+    /// as strings, which looks intentional for EE epic references.
+    enum ScalarKind { case integer, boolean }
+
+    static let scalarFieldTypes: [String: [String: ScalarKind]] = [
+        // `milestone.group_id` — caught by the live MR-list decode ("Expected to
+        // decode String but found number"); WithStats is the same milestone shape
+        // surfaced through releases.
+        "APIEntitiesMilestone": ["group_id": .integer],
+        "APIEntitiesMilestoneWithStats": ["group_id": .integer],
+        // MemberAccess exposes `access_level`/`notification_level` untyped → the
+        // spec defaults them to string; runtime is `Gitlab::Access` /
+        // `NotificationSetting.levels` integers. Member/Membership/Invitation
+        // expose the same member `access_level` integer.
+        "APIEntitiesProjectAccess": ["access_level": .integer, "notification_level": .integer],
+        "APIEntitiesGroupAccess": ["access_level": .integer, "notification_level": .integer],
+        "APIEntitiesMember": ["access_level": .integer],
+        "APIEntitiesMembership": ["access_level": .integer],
+        "APIEntitiesInvitation": ["access_level": .integer],
+        // `show_status` comes from the UserStatusTooltip concern
+        // (`status_loaded? && !!user.status&.customized?`) — boolean at runtime,
+        // untyped expose → string. Review-reachable via context commits.
+        "APIEntitiesUserPath": ["show_status": .boolean],
+    ]
+
+    struct Stats { var enumTwins = 0; var fields = 0; var responses = 0; var stringFields = 0; var scalarFields = 0 }
 
     static func main() async throws {
         // Hand-rolled parsing (keeps the tool dependency-light): `--no-fetch`, `--ref <value>`,
@@ -83,8 +123,9 @@ struct GitLabSpecTool {
         }
 
         var stats = Stats()
-        root = normalizeNode(root, stats: &stats)            // transforms 1 & 2
+        root = normalizeNode(root, stats: &stats)            // transforms 1, 2 & 4
         root = arrayifyPaginatedResponses(root, stats: &stats) // transform 3
+        root = retypeScalarFields(root, stats: &stats)      // transform 5
 
         let serialized = try Yams.serialize(node: root, allowUnicode: true)
         try serialized.write(toFile: output, atomically: true, encoding: .utf8)
@@ -101,6 +142,7 @@ struct GitLabSpecTool {
           array fields retyped:   \(stats.fields)
           list responses retyped: \(stats.responses)
           string fields retyped:  \(stats.stringFields)
+          scalar fields retyped:  \(stats.scalarFields)
         Wrote \(identifiableOutput)
           Identifiable conformances: \(conformances)
         """
@@ -289,6 +331,39 @@ struct GitLabSpecTool {
         return .mapping(responses)
     }
 
+    // MARK: Transform 5 — curated string→scalar retypes
+
+    /// Retypes the `(schema, property) → type` pairs in `scalarFieldTypes` from
+    /// `type: string` to the mapped scalar type, inside `components/schemas` only —
+    /// request bodies and unrelated same-named fields are untouched. Guarded by
+    /// `isStringTyped`, so an upstream-fixed field (already the right type) or one
+    /// legitimately typed `string` passes through unchanged.
+    static func retypeScalarFields(_ root: Node, stats: inout Stats) -> Node {
+        guard case .mapping(var rootMap) = root,
+              case .mapping(var components)? = rootMap["components"],
+              case .mapping(var schemas)? = components["schemas"]
+        else { return root }
+
+        for (schemaName, fields) in scalarFieldTypes {
+            guard case .mapping(var schema)? = schemas[schemaName],
+                  case .mapping(var properties)? = schema["properties"]
+            else { continue }
+            for key in Array(properties.keys) {
+                guard let field = key.string,
+                      let kind = fields[field],
+                      let property = properties[key], isStringTyped(property)
+                else { continue }
+                properties[key] = scalarTyped(property, as: kind)
+                stats.scalarFields += 1
+            }
+            schema["properties"] = .mapping(properties)
+            schemas[schemaName] = .mapping(schema)
+        }
+        components["schemas"] = .mapping(schemas)
+        rootMap["components"] = .mapping(components)
+        return .mapping(rootMap)
+    }
+
     // MARK: Helpers
 
     static func hasPaginationParam(_ parameters: Node?) -> Bool {
@@ -326,6 +401,24 @@ struct GitLabSpecTool {
             // force a quoted style so the example stays honest.
             m["example"] = .scalar(.init(example, Tag(.str), .singleQuoted))
         }
+        return .mapping(m)
+    }
+
+    /// `type: string` on a plain (non-`$ref`) schema node — the shape GitLab mistypes
+    /// for integer-valued fields like `group_id`.
+    static func isStringTyped(_ node: Node) -> Bool {
+        guard case .mapping(let m) = node else { return false }
+        return m["type"]?.string == "string" && m["$ref"] == nil
+    }
+
+    /// `type: string` → the mapped scalar type; drops `format`, which can't carry over.
+    static func scalarTyped(_ node: Node, as kind: ScalarKind) -> Node {
+        guard case .mapping(var m) = node else { return node }
+        switch kind {
+        case .integer: m["type"] = "integer"
+        case .boolean: m["type"] = "boolean"
+        }
+        m["format"] = nil   // assigning nil removes the key in Yams' Mapping
         return .mapping(m)
     }
 

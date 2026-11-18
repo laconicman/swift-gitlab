@@ -31,12 +31,25 @@ at runtime were typed as a single object — in **two** places:
   token-associations MR (!270810). Two of the seven sit inside the review tier; the rest
   only matter for `core`/`full`. Live decode against gitlab.com passes for the review
   entities.
-- **A second flavor — scalar mismatches.** Still unfixed: [#604896](https://gitlab.com/gitlab-org/gitlab/-/issues/604896)
-  has no MRs yet. `coverage` (spec says number, the API returns `"98.29"`) is retyped to string
-  via `stringFieldNames` — **7 fields** on the current spec — and `milestone.group_id`
-  (typed `String`, returned as a number) remains the one known live decode failure, recorded
-  by `liveDecodeReviewEntities`. Whether to add a local scalar-retype map is still undecided
-  (see <doc:Roadmap>).
+- **A second flavor — scalar mismatches.** Still unfixed upstream:
+  [#604896](https://gitlab.com/gitlab-org/gitlab/-/issues/604896) has no MRs yet.
+  Locally mitigated by the curated `scalarFieldTypes` map in `gitlab-spec-tool`
+  (schema-scoped `(schema, field) → type` retypes, each verified against GitLab's
+  entity sources): `coverage`→string ×7 via `stringFieldNames`, and
+  `group_id`→integer (`APIEntitiesMilestone`, `APIEntitiesMilestoneWithStats` —
+  live-verified on gitlab.com MR data), `access_level`/`notification_level`→integer
+  (member-access entities), `show_status`→boolean (`APIEntitiesUserPath`,
+  review-reachable via context commits). Deliberately excluded lookalikes that are
+  legitimately strings: `APIEntitiesCiRunnerDetails.access_level`
+  (`"not_protected"`/`"ref_protected"`) and
+  `APIEntitiesOrganizationsOrganizationUser.access_level` (`"owner"`), plus
+  `EpicBaseEntity.group_id` (all-string ids look intentional for EE epics).
+  Still open, all outside the review tier: `APIEntitiesProjectExportStatus.
+  export_status` documents a closed enum missing the runtime values `none` and
+  `regeneration_in_progress` (needs an enum-augmentation transform, not a retype),
+  and `show_status` on `UserEntity` /
+  `VulnerabilitiesMergeRequestLinkEntityAuthorEntity` (same boolean runtime,
+  entity lineage unverified).
 - The fix at the source retires all of this — see <doc:UpstreamSpecFix>.
 
 ## 2. Spec normalization for idiomatic naming

@@ -7,11 +7,15 @@ Planned work, in rough priority order.
 The array under-typing is mostly fixed upstream (see <doc:TechDebt> #1); the
 `liveDecodeReviewEntities` auto-catch reports anything still off. Remaining work:
 - ~~Extend `arrayFieldNames`~~ — emptied 2026-11; re-add names only if a refresh regresses.
-- **Scalar-retype map (undecided).** The auto-catch found scalar mismatches too
-  (`milestone.group_id` typed `String` but returned as a number — still the one live decode
-  failure in the review tier). A small curated `(schema, field) → type` map in the tool
-  could fix these the way `stringFieldNames` fixes `coverage` — but it risks whack-a-mole.
-  **Not yet decided**: do it locally, or rely on the upstream fix below
+- ~~Scalar-retype map~~ — done 2026-11: `scalarFieldTypes` in `gitlab-spec-tool`
+  retypes curated `(schema, field) → type` pairs the API returns as
+  integer/boolean but the spec types as string — `group_id` (milestone entities,
+  live-verified), `access_level`/`notification_level` (member-access entities),
+  `show_status`→boolean (`APIEntitiesUserPath`). Lookalikes verified as
+  legitimately strings are excluded (`CiRunnerDetails`/`OrgUser.access_level`,
+  `EpicBaseEntity.group_id`). Still open outside the review tier:
+  `export_status` enum gaps (needs enum augmentation) and `show_status` on two
+  unverified user entities — see <doc:TechDebt>.
   ([#604896](https://gitlab.com/gitlab-org/gitlab/-/issues/604896) has no MRs yet).
 
 ## Upstream spec fix (a series of PRs, in flight)

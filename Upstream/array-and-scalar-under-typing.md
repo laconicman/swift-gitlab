@@ -8,8 +8,9 @@ article is the in-repo overview of the same problem.)
 > dev** — fix MRs landing area by area (!268447, !268849, !270809 merged; source-code,
 > token-associations, webhooks, geo still open). The merged areas cover GitLabKit's whole
 > review surface: `gitlab-spec-tool` reports `array fields retyped: 0` and `arrayFieldNames`
-> has been emptied. #604896 has no MRs yet — `coverage` stays locally retyped and
-> `milestone.group_id` remains the one live decode known-issue.
+> has been emptied. #604896 has no MRs yet — `coverage` stays locally retyped, and
+> `milestone.group_id` is now locally retyped to integer (`scalarFieldTypes`,
+> verified against live gitlab.com data); the live decode records no known issues.
 
 ---
 

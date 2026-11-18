@@ -19,8 +19,10 @@ GitLab that retires our local retyping. Pick this up when there's time to contri
 >   open: source-code, token-associations, webhooks, geo. The merged areas cover the whole
 >   review surface — `gitlab-spec-tool` now reports `array fields retyped: 0` and only
 >   **7 list responses** still need retyping (2 inside the review tier).
-> - **#604896 — filed, not started.** No related MRs; `coverage` stays locally retyped and
->   `milestone.group_id` remains the one live decode known-issue.
+> - **#604896 — filed, not started.** No related MRs. `coverage` stays locally retyped
+>   to string, and `milestone.group_id` is now locally retyped to integer via the
+>   curated `scalarFieldTypes` map — verified against live gitlab.com MR data;
+>   the live decode records no known issues.
 > - **#604897 — complete.** Fixed by gitlab-grape-openapi 0.7.0
 >   ([!62](https://gitlab.com/gitlab-org/ruby/gems/gitlab-grape-openapi/-/merge_requests/62)
 >   "stable, collision-safe schema names" in the tooling repo, vendored via

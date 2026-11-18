@@ -114,7 +114,8 @@ struct ClientMockTransportTests {
     /// spec has more than one under-typing flavor:
     ///   - array-as-object — fixed upstream for the review surface (#604895 MRs merged);
     ///   - scalar mismatches (e.g. `milestone.group_id` typed `String` but returned as a
-    ///     number) — not yet mitigated upstream (#604896). See <doc:TechDebt>.
+    ///     number) — mitigated locally via `scalarFieldTypes` (#604896); other
+    ///     flavors may still surface. See <doc:TechDebt>.
     /// Read the recorded issues to decide what to add to the tool (or upstream).
     @Test(
         "live: decode a spread of review entities",

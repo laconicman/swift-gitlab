@@ -73,8 +73,9 @@ logging uses [`OSLogLoggingMiddleware`](https://github.com/laconicman/OSLogLoggi
 > the review surface ([gitlab-org/gitlab#604895](https://gitlab.com/gitlab-org/gitlab/-/issues/604895),
 > fix MRs merging area by area), so `gitlab-spec-tool` now retypes only the handful of list
 > endpoints still outstanding plus scalar mismatches like `coverage` (spec says number, the
-> API returns `"98.29"`). Real responses **decode correctly out of the box**; the opt-in
-> `liveDecodeReviewEntities` test reports any residual mismatch (e.g. `milestone.group_id`).
+> API returns `"98.29"`) and `milestone.group_id` (spec says string, the API returns a
+> number). Real responses **decode correctly out of the box**; the opt-in
+> `liveDecodeReviewEntities` test reports any residual mismatch.
 > See the **Tech Debt** doc and `Upstream/` for the fixes in flight.
 
 ## Layout

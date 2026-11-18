@@ -88606,7 +88606,7 @@ components:
           type: integer
           format: int64
         group_id:
-          type: string
+          type: integer
         title:
           type: string
         description:
@@ -96468,7 +96468,7 @@ components:
         source_type:
           type: string
         access_level:
-          type: string
+          type: integer
           description: 'Access level of the user. Possible values: `0` (no access),
             `5` (minimal access), `10` (guest), `15` (planner), `20` (reporter), `25`
             (security manager), `30` (developer), `40` (maintainer), and `50` (owner).'
@@ -100519,7 +100519,7 @@ components:
           type: integer
           format: int64
         group_id:
-          type: string
+          type: integer
         title:
           type: string
         description:
@@ -100737,19 +100737,19 @@ components:
       type: object
       properties:
         access_level:
-          type: string
+          type: integer
           description: Access level of the current user.
         notification_level:
-          type: string
+          type: integer
           description: Notification level of the current user.
     APIEntitiesGroupAccess:
       type: object
       properties:
         access_level:
-          type: string
+          type: integer
           description: Access level of the current user.
         notification_level:
-          type: string
+          type: integer
           description: Notification level of the current user.
     APIEntitiesProjectWithAccess:
       type: object
@@ -106030,7 +106030,7 @@ components:
         status_tooltip_html:
           type: string
         show_status:
-          type: string
+          type: boolean
         availability:
           type: string
         path:
@@ -106510,7 +106510,7 @@ components:
           description: URL of the user's profile.
           example: https://gitlab.example.com/root
         access_level:
-          type: string
+          type: integer
         created_at:
           type: string
         created_by:
@@ -106947,7 +106947,7 @@ components:
       type: object
       properties:
         access_level:
-          type: string
+          type: integer
         created_at:
           type: string
         expires_at:

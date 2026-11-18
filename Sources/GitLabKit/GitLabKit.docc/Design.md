@@ -6,8 +6,8 @@ Why GitLabKit is generated, how it is structured, and the decisions behind it.
 
 The only dedicated Swift GitLab client (`malcommac/GitLabSwift`) is hand-written, covers
 ~20 resources, and has been unmaintained since March 2023 — it does not track the spec.
-GitLab's OpenAPI document, by contrast, is now large and clean: OpenAPI 3.0.0, ~1,721
-operations, 2,532 schemas, **all operationIds unique**, with a `https://{hostname}` server
+GitLab's OpenAPI document, by contrast, is now large and clean: OpenAPI 3.0.0, ~1,865
+operations, 1,149 schemas, **all operationIds unique**, with a `https://{hostname}` server
 template and `http` bearer + `oauth2` security. That makes generation the right call: a
 typed, `Sendable`, async/await client that regenerates whenever GitLab updates the spec.
 
@@ -28,24 +28,25 @@ rebuilds only when the spec changes, and so SourceKit can see the symbols):
 
 ## Scope via `filter:`
 
-The full spec generates a ~157k-line `Types.swift` (~2.5-min compile), because the broad
-resource tags pull in most of the 2,532 schemas. The **active** config
+The full spec generates a `Types.swift` several times larger with a multi-minute compile,
+because the broad resource tags pull in most of the 1,149 schemas. The **active** config
 (`openapi-generator-config.yaml`) is therefore tightened to the review surface — merge
 requests, approvals, notes, discussions, draft notes, award emoji, commits, branches,
-repository diffs — yielding **218 operations** and a 65k-line `Types.swift` (~76-s compile).
+repository diffs — yielding **223 operations** and a 75k-line `Types.swift` (~100-s compile).
 
-Two broader tiers are preserved beside it (excluded from the build): **core** (494 ops —
-review + project/group/user/issue/CI management) and **full** (~1,721 ops — the whole API,
+Two broader tiers are preserved beside it (excluded from the build): **core** (508 ops —
+review + project/group/user/issue/CI management) and **full** (1,865 ops — the whole API,
 no filter). Switch tiers by copying a template over `openapi-generator-config.yaml`.
 
 ## The spec tool
 
 `gitlab-spec-tool` (`swift run gitlab-spec-tool`) is the maintainer pipeline that (re)vendors the
 spec — fetch (`--ref` to pin a tag/branch/sha) → normalize → write — replacing an earlier bash
-script so the toolchain is all Swift. It parses the YAML with Yams and applies three transforms:
-drop colliding enum twins, and retype the under-typed arrays (entity fields + paginated list
-responses) so real responses decode. The transforms are **idempotent** (guarded, so a correct
-spec passes through unchanged). See <doc:TechDebt>.
+script so the toolchain is all Swift. It parses the YAML with Yams and applies four transforms:
+drop colliding enum twins, retype under-typed array fields and paginated list responses, and
+retype string-valued `coverage` fields the spec calls numbers. The transforms are
+**idempotent** (guarded, so a correct spec passes through unchanged) — and shrink to no-ops as
+upstream fixes land (the array-field list is already empty; see <doc:TechDebt>).
 
 It also **generates `Types+Identifiable.generated.swift`** — swift-openapi-generator can't emit
 protocol conformances, so the tool conforms every *filtered* entity that has an `id` to

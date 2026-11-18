@@ -33,8 +33,9 @@ struct ClientMockTransportTests {
 
     /// Exercises a real generated review operation end-to-end through the client +
     /// `HeaderMiddleware`, asserting the URL is built correctly and the bearer token is
-    /// attached. The list endpoint's 200 is retyped to an array by the spec tool (see the
-    /// "Tech Debt" DocC article), so the canned body is a JSON array and decodes to `[Note]`.
+    /// attached. The list endpoint's 200 is `type: array` upstream (the spec tool's
+    /// retyping is no longer needed there — see the "Tech Debt" DocC article), so the
+    /// canned body is a JSON array and decodes to `[Note]`.
     @Test("listing MR notes builds the right request and carries the bearer token")
     func listMergeRequestNotes() async throws {
         let mock = MockTransport(jsonBody: "[]")
@@ -102,8 +103,8 @@ struct ClientMockTransportTests {
             .init(path: .init(id: .case1(project), mergeRequestIid: iid))
         )
         switch output {
-        case .ok(let ok): _ = try ok.body.json   // decodes — array fields retyped by the spec tool
-        case .notFound, .undocumented: break
+        case .ok(let ok): _ = try ok.body.json   // decodes — arrays are typed correctly upstream
+        case .badRequest, .notFound, .undocumented: break
         }
     }
 
@@ -111,9 +112,9 @@ struct ClientMockTransportTests {
     /// merge requests + commits) and *reports* any spec/response mismatch as a recorded
     /// known issue rather than failing the suite — because live data evolves and GitLab's
     /// spec has more than one under-typing flavor:
-    ///   - array-as-object (`assignees`, `reviewers`) — fixed by `gitlab-spec-tool`;
+    ///   - array-as-object — fixed upstream for the review surface (#604895 MRs merged);
     ///   - scalar mismatches (e.g. `milestone.group_id` typed `String` but returned as a
-    ///     number) — not yet mitigated. See <doc:TechDebt>.
+    ///     number) — not yet mitigated upstream (#604896). See <doc:TechDebt>.
     /// Read the recorded issues to decide what to add to the tool (or upstream).
     @Test(
         "live: decode a spread of review entities",

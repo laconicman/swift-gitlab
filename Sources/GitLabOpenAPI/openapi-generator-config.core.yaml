@@ -1,8 +1,9 @@
-# TIER: core (~494 operations) — PRESERVED template, not used by the build plugin
+# TIER: core (~508 operations) — PRESERVED template, not used by the build plugin
 # (excluded in Package.swift; the plugin only loads `openapi-generator-config.yaml`).
 #
 # "core" = the review surface PLUS general project/group/user/issue/CI management. It pulls
-# most of the 2,532 schemas, so Types.swift is ~157k lines (~2.5-min compile). Use it when
+# most of the 1,149 schemas, so Types.swift is well over a hundred k lines (multi-minute
+# compile). Use it when
 # you need broader coverage than the active `review` tier. To activate, copy this over
 # `openapi-generator-config.yaml` and rebuild. See the DocC "Design" article for the tiers.
 generate:

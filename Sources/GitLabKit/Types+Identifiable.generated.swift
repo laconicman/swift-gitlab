@@ -14,13 +14,17 @@ extension Components.Schemas.APIEntitiesCiPipelineBasic: Identifiable {}
 extension Components.Schemas.APIEntitiesCommit: Identifiable {}
 extension Components.Schemas.APIEntitiesCommitDetail: Identifiable {}
 extension Components.Schemas.APIEntitiesCommitStatus: Identifiable {}
+extension Components.Schemas.APIEntitiesCommitWithLink: Identifiable {}
 extension Components.Schemas.APIEntitiesDiscussion: Identifiable {}
 extension Components.Schemas.APIEntitiesDraftNote: Identifiable {}
 extension Components.Schemas.APIEntitiesGroup: Identifiable {}
 extension Components.Schemas.APIEntitiesGroupApprovalRule: Identifiable {}
+extension Components.Schemas.APIEntitiesIssueBasic: Identifiable {}
 extension Components.Schemas.APIEntitiesMergeRequest: Identifiable {}
 extension Components.Schemas.APIEntitiesMergeRequestApprovalRule: Identifiable {}
 extension Components.Schemas.APIEntitiesMergeRequestApprovalStateRule: Identifiable {}
+extension Components.Schemas.APIEntitiesMergeRequestApprovals: Identifiable {}
+extension Components.Schemas.APIEntitiesMergeRequestAuthor: Identifiable {}
 extension Components.Schemas.APIEntitiesMergeRequestBasic: Identifiable {}
 extension Components.Schemas.APIEntitiesMergeRequestChanges: Identifiable {}
 extension Components.Schemas.APIEntitiesMergeRequestDependency: Identifiable {}
@@ -37,3 +41,4 @@ extension Components.Schemas.APIEntitiesProtectedRefAccess: Identifiable {}
 extension Components.Schemas.APIEntitiesSuggestion: Identifiable {}
 extension Components.Schemas.APIEntitiesTreeObject: Identifiable {}
 extension Components.Schemas.APIEntitiesUserBasic: Identifiable {}
+extension Components.Schemas.APIEntitiesUserPath: Identifiable {}

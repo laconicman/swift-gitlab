@@ -7,10 +7,26 @@ GitLab that retires our local retyping. Pick this up when there's time to contri
 > anonymous `RequestBody_<hash>` schemas) live in the repo's `Upstream/` directory. This
 > article is the overview; that folder holds the ready-to-file artifacts.
 >
-> Status (2026-07-03): all three are filed upstream —
+> Status (2026-11-18): all three were filed upstream on 2026-07-03 —
 > [#604895](https://gitlab.com/gitlab-org/gitlab/-/issues/604895) (arrays),
 > [#604896](https://gitlab.com/gitlab-org/gitlab/-/issues/604896) (scalars),
 > [#604897](https://gitlab.com/gitlab-org/gitlab/-/issues/604897) (`RequestBody_<hash>` naming).
+>
+> - **#604895 — in dev, landing as predicted.** Fix MRs merged so far:
+>   [!268447](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/268447) (core),
+>   [!268849](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/268849) (EE),
+>   [!270809](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/270809) (organizations);
+>   open: source-code, token-associations, webhooks, geo. The merged areas cover the whole
+>   review surface — `gitlab-spec-tool` now reports `array fields retyped: 0` and only
+>   **7 list responses** still need retyping (2 inside the review tier).
+> - **#604896 — filed, not started.** No related MRs; `coverage` stays locally retyped and
+>   `milestone.group_id` remains the one live decode known-issue.
+> - **#604897 — complete.** Fixed by gitlab-grape-openapi 0.7.0
+>   ([!62](https://gitlab.com/gitlab-org/ruby/gems/gitlab-grape-openapi/-/merge_requests/62)
+>   "stable, collision-safe schema names" in the tooling repo, vendored via
+>   [!259271](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/259271)): the spec went
+>   from 422 `RequestBody_<hash>` schemas to 0 — request bodies now carry stable
+>   operation-derived names.
 
 ## The claim to make in the PR
 
@@ -52,8 +68,10 @@ swift build                                              # regenerate
 
 When the upstream fix is correct, `gitlab-spec-tool` reports **`array fields retyped: 0`** and
 **`list responses retyped: 0`** for the fixed areas — the retyping has nothing left to do.
-At that point the local mitigation can be narrowed or removed (see <doc:Roadmap>), and we pin
-`--ref` to the fixed revision so we never "re-fix" an already-correct spec.
+That state is already true for the array *fields* (the `arrayFieldNames` list is empty) and
+nearly so for list responses; as the remaining upstream MRs merge, re-vendor master and the
+response count drops toward zero — then the transform can be narrowed or removed (see
+<doc:Roadmap>).
 
 
 ## Some strange default servers in the spec

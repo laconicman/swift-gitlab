@@ -17,7 +17,8 @@ import FoundationNetworking
 ///  1. Enum twins   — drop hyphenated enum values that collide with an underscore twin
 ///                    (`created-by-me` vs `created_by_me`), which idiomatic naming merges.
 ///  2. Array fields — retype entity properties the API returns as arrays but the spec types
-///                    as a single object (`assignees`, `reviewers`).
+///                    as a single object. Currently a no-op: `arrayFieldNames` is empty
+///                    because upstream fixed every curated field (#604895).
 ///  3. List bodies  — retype paginated GET 200 responses (those with a `page`/`per_page`
 ///                    query param) from a single entity to an array of that entity.
 ///  4. String fields — retype entity properties the API returns as strings but the spec
@@ -37,9 +38,12 @@ struct GitLabSpecTool {
     static let identifiableOutput = "Sources/GitLabKit/Types+Identifiable.generated.swift"
 
     /// Entity properties that are arrays at runtime but under-typed as a single `$ref`.
-    /// `notes` (discussion) and `suggestions` (note) were surfaced by the laconic-review
-    /// connector's discussions read; the live decode test now covers discussions to catch more.
-    static let arrayFieldNames: Set<String> = ["assignees", "reviewers", "notes", "suggestions"]
+    /// Empty since the 2026-11 spec refresh: upstream now types every curated field
+    /// (`assignees`, `reviewers`, `notes`, `suggestions`) as `type: array` — the fix for
+    /// gitlab-org/gitlab#604895 landed in !268447, !268849 and !270809 — and a spec-wide
+    /// check reports `array fields retyped: 0`. Re-add names here only if a refresh
+    /// regresses or a pinned old `--ref` needs them; see the DocC "Tech Debt" article.
+    static let arrayFieldNames: Set<String> = []
 
     /// Entity properties that are strings at runtime but the spec types `number`/`float`.
     /// `coverage` was surfaced by the MR read: `head_pipeline.coverage` arrives as "98.29".
@@ -106,9 +110,9 @@ struct GitLabSpecTool {
     // MARK: Generate Identifiable conformances
 
     /// Emits `extension Components.Schemas.X: Identifiable {}` for every schema that (a) is in
-    /// the active filter's generated set, (b) has a clean Swift-identifier name (skips the
-    /// anonymous `RequestBody_*` schemas idiomatic naming would rename), and (c) has a
-    /// top-level `id` property. Returns the count.
+    /// the active filter's generated set, (b) has a clean Swift-identifier name (skips any
+    /// schema whose name wouldn't survive idiomatic naming), and (c) has a top-level `id`
+    /// property. Returns the count.
     @discardableResult
     static func emitIdentifiable(root: Node, configPath: String) throws -> Int {
         guard case .mapping(let rootMap) = root,

@@ -4,6 +4,13 @@ Upstream note for `gitlab-org/gitlab`. The **Issue draft** is plain GitLab-flavo
 ready to paste; the **PR handoff** is the implementation guide. (The DocC `UpstreamSpecFix`
 article is the in-repo overview of the same problem.)
 
+> **Status (2026-11-18):** filed as #604895 (arrays) + #604896 (scalars). #604895 is **in
+> dev** — fix MRs landing area by area (!268447, !268849, !270809 merged; source-code,
+> token-associations, webhooks, geo still open). The merged areas cover GitLabKit's whole
+> review surface: `gitlab-spec-tool` reports `array fields retyped: 0` and `arrayFieldNames`
+> has been emptied. #604896 has no MRs yet — `coverage` stays locally retyped and
+> `milestone.group_id` remains the one live decode known-issue.
+
 ---
 
 ## Issue draft

@@ -3,36 +3,40 @@
 Known compromises, workarounds, and upstream-spec limitations carried by GitLabKit. Each
 entry names the cost and how to discharge it.
 
-## 1. Arrays are under-typed as single objects (upstream)
+## 1. Arrays were under-typed as single objects (upstream — mostly fixed)
 
-**The big one.** GitLab's OpenAPI document is generated from Grape annotations that
-inconsistently omit the "is array" flag, so things that are arrays at runtime are typed as a
-single object. This shows up in **two** places:
+**The big one, now mostly discharged upstream.** GitLab's OpenAPI document was generated from
+Grape annotations that inconsistently omitted the "is array" flag, so things that are arrays
+at runtime were typed as a single object — in **two** places:
 
-- **List endpoints:** `GET` collections are typed as one entity, not a list — e.g.
-  `getApiV4ProjectsIdMergeRequestsNoteableIdNotes` returns `APIEntitiesNote`, not
-  `[APIEntitiesNote]` (same for discussions, commits, branches, …).
-- **Nested entity fields:** array properties *inside* an entity are also mis-typed — on
-  `APIEntitiesMergeRequest`, `assignees` and `reviewers` are typed `APIEntitiesUserBasic?`
-  (a single user) but the API returns an array. (`labels` happens to be typed correctly, so
-  it is field-by-field, not uniform.)
+- **List endpoints:** `GET` collections typed as one entity, not a list.
+- **Nested entity fields:** array properties *inside* an entity mis-typed — on
+  `APIEntitiesMergeRequest`, `assignees` and `reviewers` were typed `APIEntitiesUserBasic?`
+  (a single user) while the API returns an array.
 
-- **Impact (if unmitigated):** decoding a real response through `.ok.body.json` throws a
-  `DecodingError` (`typeMismatch … found an array instead`) — confirmed live against
-  gitlab.com (HTTP 200, request/auth/dates all fine, only strict decode fails). Because the
-  bad fields are nested, *even single-object endpoints* can fail, not just lists.
-- **Mitigation (implemented):** `swift run gitlab-spec-tool` retypes the affected fields
-  (`assignees`, `reviewers`) and every paginated `GET` 200 response to `type: array` during
-  vendoring — **11 fields + 239 responses** on the current spec. Real responses now decode
-  (the live single-MR test passes cleanly). **Residual risk:** the field list
-  (`arrayFieldNames`) is curated, so a newly-surfaced under-typed field needs adding there.
-- **A second flavor — scalar mismatches.** The under-typing isn't only array-vs-object. The
-  `liveDecodeReviewEntities` auto-catch found `milestone.group_id` typed `String` but returned
-  as a *number*; `fetch` in laconic-review found `head_pipeline.coverage` typed `number` but
-  returned as `"98.29"`. The tool's `stringFieldNames` map retypes number→string where the
-  API proves stringly (guard: `type: number` + `format: float`, so request-side numeric
-  fields pass through). Anything that escapes the map the auto-catch test **reports**
-  (recorded known issues); the real fix is upstream.
+- **Upstream status (2026-11-18):** [gitlab-org/gitlab#604895](https://gitlab.com/gitlab-org/gitlab/-/issues/604895)
+  is `workflow::in dev` and landing as a **series of area-by-area MRs** — merged so far:
+  [!268447](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/268447) (core),
+  [!268849](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/268849) (EE),
+  [!270809](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/270809) (organizations);
+  open: source-code, token-associations, webhooks, geo areas. The merged MRs cover the whole
+  review surface: `assignees`/`reviewers`/`notes`/`suggestions` are `type: array` upstream,
+  and `gitlab-spec-tool` now reports **`array fields retyped: 0`** spec-wide — the curated
+  `arrayFieldNames` list has been emptied (kept as a mechanism for regressions and pinned old
+  `--ref`s).
+- **Residual:** **7 paginated GETs still return single-object 200s** — the transform still
+  retypes them, and every one has an MR in flight: `repository/tree` +
+  `repository/contributors` + the four template lists are covered by the open
+  source-code MR (!268850), and `personal_access_tokens/self/associations` by the open
+  token-associations MR (!270810). Two of the seven sit inside the review tier; the rest
+  only matter for `core`/`full`. Live decode against gitlab.com passes for the review
+  entities.
+- **A second flavor — scalar mismatches.** Still unfixed: [#604896](https://gitlab.com/gitlab-org/gitlab/-/issues/604896)
+  has no MRs yet. `coverage` (spec says number, the API returns `"98.29"`) is retyped to string
+  via `stringFieldNames` — **7 fields** on the current spec — and `milestone.group_id`
+  (typed `String`, returned as a number) remains the one known live decode failure, recorded
+  by `liveDecodeReviewEntities`. Whether to add a local scalar-retype map is still undecided
+  (see <doc:Roadmap>).
 - The fix at the source retires all of this — see <doc:UpstreamSpecFix>.
 
 ## 2. Spec normalization for idiomatic naming
@@ -61,7 +65,7 @@ product.
 
 ## 4. Generated-module compile time
 
-Even tightened to 218 operations, `Types.swift` is ~65k lines and takes ~76 s to compile
+Even tightened to 223 operations, `Types.swift` is ~75k lines and takes ~100 s to compile
 cold. It is isolated in the `GitLabOpenAPI` target, so it rebuilds only when the spec or
 config changes and stays out of the incremental loop for façade/app code.
 

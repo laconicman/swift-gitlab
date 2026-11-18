@@ -1,4 +1,4 @@
-# TIER: full (~1,721 operations) — PRESERVED template, not used by the build plugin
+# TIER: full (~1,865 operations) — PRESERVED template, not used by the build plugin
 # (excluded in Package.swift; the plugin only loads `openapi-generator-config.yaml`).
 #
 # "full" = the ENTIRE GitLab REST API: no `filter:`, every tag/operation. This generates a

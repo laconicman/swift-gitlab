@@ -3,6 +3,11 @@
 Upstream note for `gitlab-org/gitlab`. The **Issue draft** below is plain GitLab-flavoured
 markdown, ready to paste into the tracker. The **PR handoff** is the implementation guide.
 
+> **Status (2026-11-18): resolved upstream.** Filed as #604897, closed 2026-10-03 —
+> gitlab-grape-openapi 0.7.0 emits stable, operation-derived schema names (tooling MR !62,
+> vendored via gitlab-org/gitlab!259271). The vendored spec now has **0** `RequestBody_<hash>`
+> schemas (was 422); this note is kept as the record of what was filed.
+
 ---
 
 ## Issue draft

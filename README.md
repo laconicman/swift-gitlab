@@ -22,9 +22,9 @@ default; switch tiers by copying a template over
 
 | Tier | Operations | Config file |
 |---|---|---|
-| **`review`** (default) | ~218 | `openapi-generator-config.yaml` |
-| `core` | ~494 | `openapi-generator-config.core.yaml` |
-| `full` (whole API) | ~1,721 | `openapi-generator-config.full.yaml` |
+| **`review`** (default) | ~223 | `openapi-generator-config.yaml` |
+| `core` | ~508 | `openapi-generator-config.core.yaml` |
+| `full` (whole API) | ~1,865 | `openapi-generator-config.full.yaml` |
 
 The default `review` tier covers merge requests, approvals, notes, discussions, draft notes,
 award emoji, commits, branches, and repository diffs.
@@ -68,13 +68,14 @@ case .undocumented(let s, _): print("status \(s)")
 Authentication is a static bearer token (PAT or OAuth2 access token) via `HeaderMiddleware`;
 logging uses [`OSLogLoggingMiddleware`](https://github.com/laconicman/OSLogLoggingMiddleware).
 
-> **Response decoding.** GitLab's *published* spec under-types arrays — list endpoints and
-> fields like `assignees`/`reviewers` are typed as single objects, which would break decoding.
-> GitLabKit ships a **normalized spec** (`gitlab-spec-tool` retypes them), so list endpoints and
-> array fields **decode correctly out of the box**. Scalar mismatches are handled field by
-> field — `coverage` (spec says number, the API returns `"98.29"`) is retyped to string via
-> `stringFieldNames`; the opt-in `liveDecodeReviewEntities` test reports any it finds
-> (e.g. `milestone.group_id`). See the **Tech Debt** doc and `Upstream/` for the fixes in flight.
+> **Response decoding.** GitLab's *published* spec under-typed arrays — list endpoints and
+> fields like `assignees`/`reviewers` were typed as single objects. Upstream has since fixed
+> the review surface ([gitlab-org/gitlab#604895](https://gitlab.com/gitlab-org/gitlab/-/issues/604895),
+> fix MRs merging area by area), so `gitlab-spec-tool` now retypes only the handful of list
+> endpoints still outstanding plus scalar mismatches like `coverage` (spec says number, the
+> API returns `"98.29"`). Real responses **decode correctly out of the box**; the opt-in
+> `liveDecodeReviewEntities` test reports any residual mismatch (e.g. `milestone.group_id`).
+> See the **Tech Debt** doc and `Upstream/` for the fixes in flight.
 
 ## Layout
 

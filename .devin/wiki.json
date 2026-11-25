@@ -5,7 +5,7 @@
       "author": "maintainer"
     },
     {
-      "content": "AUTHORITATIVE SOURCES, in precedence order. The DocC catalogue at Sources/GitLabKit/GitLabKit.docc/ holds the direction documents and outranks inference from the tree: Design.md carries the decisions and their rejected alternatives, Roadmap.md the plan, TechDebt.md the numbered register, and UpstreamSpecFix.md the record of corrections this project makes to GitLab's published specification. Upstream/ holds the defect reports filed against that specification — anonymous-request-bodies.md and array-and-scalar-under-typing.md — and describes flaws in GitLab's spec, not in this client; treat it as one topic, the upstream-reporting practice. README.md is the consumer-facing entry point.",
+      "content": "AUTHORITATIVE SOURCES, in precedence order. The DocC catalogue at Sources/GitLabKit/GitLabKit.docc/ holds the direction documents and outranks inference from the tree: Design.md carries the decisions and their rejected alternatives, Roadmap.md the plan, TechDebt.md the numbered register, and UpstreamSpecFix.md the record of corrections this project makes to GitLab's published specification. Upstream/ holds the defect reports filed against that specification — anonymous-request-bodies.md, array-and-scalar-under-typing.md and date-vs-date-time.md — and describes flaws in GitLab's spec, not in this client; treat it as one topic, the upstream-reporting practice. README.md is the consumer-facing entry point.",
       "author": "maintainer"
     },
     {

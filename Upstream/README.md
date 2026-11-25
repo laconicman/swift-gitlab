@@ -7,8 +7,9 @@ these files are the actionable artifacts.
 
 | Note | Problem | Local mitigation today | Status |
 |---|---|---|---|
-| [array-and-scalar-under-typing](array-and-scalar-under-typing.md) | Lists & plural fields typed as single objects; some scalars mistyped (`group_id`) | array retyping nearly retired — `arrayFieldNames` emptied, 7 list responses left; `coverage`→string; `group_id`→integer via `scalarFieldTypes` | [#604895](https://gitlab.com/gitlab-org/gitlab/-/issues/604895) **in dev** — !268447/!268849/!270809 merged (review surface covered), source-code/token-auth/webhooks/geo MRs open; [#604896](https://gitlab.com/gitlab-org/gitlab/-/issues/604896) (scalars) filed, no MRs |
+| [array-and-scalar-under-typing](array-and-scalar-under-typing.md) | Lists & plural fields typed as single objects; some scalars mistyped (`group_id`) | array retyping fully retired — `arrayFieldNames` emptied, **1** list response left (`personal_access_tokens/self/associations`); `coverage`→string; `group_id`→integer via `scalarFieldTypes` | [#604895](https://gitlab.com/gitlab-org/gitlab/-/issues/604895) **in dev** — !268447/!268849/!270809/!268850/!270810 merged; [#604896](https://gitlab.com/gitlab-org/gitlab/-/issues/604896) (scalars) filed, no MRs |
 | [anonymous-request-bodies](anonymous-request-bodies.md) | 422 inline request bodies hoisted to hash-named `RequestBody_<hash>` schemas | none needed — fixed upstream | [#604897](https://gitlab.com/gitlab-org/gitlab/-/issues/604897) **closed** — grape-openapi 0.7.0 emits stable names; spec now has 0 `RequestBody_*` schemas |
+| [date-vs-date-time](date-vs-date-time.md) | `date` columns typed `format: date-time` (`last_activity_on`, `marked_for_deletion_*`, token `expires_at`, …) | `GitLabDateTranscoder` accepts `YYYY-MM-DD` (start-of-day UTC) — covers all mistyped fields | **issue draft ready to file** — verified against `db/structure.sql` |
 
 All three are **spec-accuracy defects — the API is correct**, so each is fixable with a
 documentation-only change (no API behaviour change). The under-typing spans much of the API, so

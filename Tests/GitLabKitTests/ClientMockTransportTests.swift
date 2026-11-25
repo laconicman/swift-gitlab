@@ -58,6 +58,31 @@ struct ClientMockTransportTests {
         #expect(captured.headerFields[.authorization] == "Bearer test-token")
     }
 
+    /// Issue #5: GitLab `date` columns serialize as `YYYY-MM-DD`, but the spec mistypes
+    /// them `format: date-time` (e.g. `last_activity_on` on the user entities), so the
+    /// generated property is `Date?` and the transcoder must accept the bare date.
+    /// Before the fix this threw `DecodingError.dataCorrupted: Expected an ISO-8601
+    /// date, received '2026-11-24'`.
+    @Test("user decode accepts a date-only last_activity_on")
+    func userDecodeDateOnlyField() async throws {
+        let mock = MockTransport(jsonBody: #"{"id":1,"username":"octocat","last_activity_on":"2026-11-24"}"#)
+        let client = Client(
+            serverURL: try Servers.Server1.url(),
+            configuration: Configuration(dateTranscoder: GitLabDateTranscoder()),
+            transport: mock,
+            middlewares: [HeaderMiddleware(bearerToken: "test-token")]
+        )
+
+        let output = try await client.getApiV4User(.init())
+        guard case .ok(let ok) = output else {
+            Issue.record("expected .ok, got \(output)")
+            return
+        }
+        let user = try ok.body.json
+        #expect(user.username == "octocat")
+        #expect(user.lastActivityOn == Date(timeIntervalSince1970: 1_795_478_400)) // 2026-11-24T00:00:00Z
+    }
+
     /// The `session:` convenience parameter exists so callers can inject a proxy-configured
     /// (or test-double) `URLSession` — verify it actually reaches the transport rather than
     /// being silently dropped (`Client.transport` is private; the shared helper is the seam).

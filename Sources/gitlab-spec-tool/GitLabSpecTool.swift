@@ -51,6 +51,18 @@ struct GitLabSpecTool {
     /// regresses or a pinned old `--ref` needs them; see the DocC "Tech Debt" article.
     static let arrayFieldNames: Set<String> = []
 
+    /// GET paths whose `page`/`per_page` params paginate collections *inside* the
+    /// response object rather than the response itself. Their 200 schema is already
+    /// the correct single `$ref` and must not be array-wrapped.
+    /// `self/associations` returns `{groups: […], projects: […]}` — verified against
+    /// `lib/api/personal_access_tokens/self_information.rb` @ master, which applies
+    /// `paginate` to each inner list. Upstream's !270810 fixed the schema target to
+    /// `APIEntitiesPersonalAccessTokenAssociations`; wrapping it in an array again
+    /// would re-break decoding.
+    static let containerResponsePaths: Set<String> = [
+        "/api/v4/personal_access_tokens/self/associations",
+    ]
+
     /// Entity properties that are strings at runtime but the spec types `number`/`float`.
     /// `coverage` was surfaced by the MR read: `head_pipeline.coverage` arrives as "98.29".
     /// The request-side `coverage` field (update-a-job) is typed `number` WITHOUT
@@ -295,7 +307,9 @@ struct GitLabSpecTool {
         else { return root }
 
         for pathKey in Array(paths.keys) {
-            guard case .mapping(var pathItem)? = paths[pathKey] else { continue }
+            guard case .mapping(var pathItem)? = paths[pathKey],
+                  !containerResponsePaths.contains(pathKey.string ?? "")
+            else { continue }
             for method in Array(pathItem.keys) {
                 guard method.string == "get",
                       case .mapping(var op)? = pathItem[method],

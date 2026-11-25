@@ -28,9 +28,12 @@ import FoundationNetworking
 ///                    arrives as a number, `author.show_status` as true/false — both
 ///                    documented `string` because the upstream `expose` lacks a
 ///                    `documentation: { type: }`).
+///  6. Response bodies — fill `200.content` for operations upstream declares
+///                    schema-less though the API returns a documented JSON body
+///                    (`missingResponseSchemas`, hand-checked against `doc/api/**.md`).
 ///
-/// All five are **idempotent and harmless on a correctly-typed spec**: each is guarded
-/// (`isSingleRef`, "twin exists", `isFloatTyped`, `isStringTyped`), so an
+/// All six are **idempotent and harmless on a correctly-typed spec**: each is guarded
+/// (`isSingleRef`, "twin exists", `isFloatTyped`, `isStringTyped`, "content absent"), so an
 /// already-array field/response, an already-string/integer field, or an
 /// already-deduped enum passes through unchanged. If GitLab fixes
 /// the spec upstream, this tool becomes a no-op retyping-wise — pin `--ref` to that fixed
@@ -50,6 +53,18 @@ struct GitLabSpecTool {
     /// check reports `array fields retyped: 0`. Re-add names here only if a refresh
     /// regresses or a pinned old `--ref` needs them; see the DocC "Tech Debt" article.
     static let arrayFieldNames: Set<String> = []
+
+    /// GET paths whose `page`/`per_page` params paginate collections *inside* the
+    /// response object rather than the response itself. Their 200 schema is already
+    /// the correct single `$ref` and must not be array-wrapped.
+    /// `self/associations` returns `{groups: […], projects: […]}` — verified against
+    /// `lib/api/personal_access_tokens/self_information.rb` @ master, which applies
+    /// `paginate` to each inner list. Upstream's !270810 fixed the schema target to
+    /// `APIEntitiesPersonalAccessTokenAssociations`; wrapping it in an array again
+    /// would re-break decoding.
+    static let containerResponsePaths: Set<String> = [
+        "/api/v4/personal_access_tokens/self/associations",
+    ]
 
     /// Entity properties that are strings at runtime but the spec types `number`/`float`.
     /// `coverage` was surfaced by the MR read: `head_pipeline.coverage` arrives as "98.29".
@@ -91,7 +106,58 @@ struct GitLabSpecTool {
         "APIEntitiesUserPath": ["show_status": .boolean],
     ]
 
-    struct Stats { var enumTwins = 0; var fields = 0; var responses = 0; var stringFields = 0; var scalarFields = 0 }
+    /// 200 responses upstream declares with no `content` though the API returns a
+    /// documented JSON body — keyed by `operationId`, valued by the schema YAML.
+    /// Hand-authored from `doc/api/**.md` (the endpoint's `success` lacks a
+    /// `model:`, so grape-openapi emits an empty 200). Every leaf is `nullable`
+    /// because the docs don't specify nullability — a hand-authored schema should
+    /// tolerate explicit nulls rather than fail decode. When upstream adds the
+    /// model, the guard (`content` already present) makes this a no-op.
+    static let missingResponseSchemas: [String: String] = [
+        // POST /projects/:id/import/github/sync/restore — doc/api/import.md
+        // "Restore GitHub updates with a new personal access token".
+        "postApiV4ProjectsIdImportGithubSyncRestore": """
+        type: object
+        properties:
+          state:
+            type: string
+            nullable: true
+            description: Which side owns the repository. After a restore, this is the state the repository had before it was disconnected, usually `provider_canonical`.
+          read_only:
+            type: boolean
+            nullable: true
+            description: If `true`, the project is read-only because GitHub is the source of truth.
+          final_pass_incomplete:
+            type: boolean
+            nullable: true
+            description: If `true`, a stop finished without every data type being current.
+          data:
+            type: object
+            additionalProperties:
+              type: object
+              properties:
+                state:
+                  type: string
+                  nullable: true
+                  description: State of the updates for this type of data.
+                last_updated_at:
+                  type: string
+                  format: date-time
+                  nullable: true
+                  description: Time of the last successful update, in ISO 8601 format.
+                last_checked_at:
+                  type: string
+                  format: date-time
+                  nullable: true
+                  description: Time of the last check, in ISO 8601 format.
+          warning:
+            type: string
+            nullable: true
+            description: Only present when the webhook could not be created. Explains that changes are checked on a schedule.
+        """,
+    ]
+
+    struct Stats { var enumTwins = 0; var fields = 0; var responses = 0; var stringFields = 0; var scalarFields = 0; var responseSchemas = 0 }
 
     static func main() async throws {
         // Hand-rolled parsing (keeps the tool dependency-light): `--no-fetch`, `--ref <value>`,
@@ -126,6 +192,7 @@ struct GitLabSpecTool {
         root = normalizeNode(root, stats: &stats)            // transforms 1, 2 & 4
         root = arrayifyPaginatedResponses(root, stats: &stats) // transform 3
         root = retypeScalarFields(root, stats: &stats)      // transform 5
+        root = applyMissingResponseSchemas(root, stats: &stats) // transform 6
 
         let serialized = try Yams.serialize(node: root, allowUnicode: true)
         try serialized.write(toFile: output, atomically: true, encoding: .utf8)
@@ -143,6 +210,7 @@ struct GitLabSpecTool {
           list responses retyped: \(stats.responses)
           string fields retyped:  \(stats.stringFields)
           scalar fields retyped:  \(stats.scalarFields)
+          response schemas added: \(stats.responseSchemas)
         Wrote \(identifiableOutput)
           Identifiable conformances: \(conformances)
         """
@@ -295,7 +363,9 @@ struct GitLabSpecTool {
         else { return root }
 
         for pathKey in Array(paths.keys) {
-            guard case .mapping(var pathItem)? = paths[pathKey] else { continue }
+            guard case .mapping(var pathItem)? = paths[pathKey],
+                  !containerResponsePaths.contains(pathKey.string ?? "")
+            else { continue }
             for method in Array(pathItem.keys) {
                 guard method.string == "get",
                       case .mapping(var op)? = pathItem[method],
@@ -362,6 +432,51 @@ struct GitLabSpecTool {
         components["schemas"] = .mapping(schemas)
         rootMap["components"] = .mapping(components)
         return .mapping(rootMap)
+    }
+
+    // MARK: Transform 6 — missing 200 response schemas
+
+    /// Fills `responses.200.content` for operations in `missingResponseSchemas`
+    /// whose 200 upstream left schema-less. Guarded on `content` being absent, so
+    /// an upstream-fixed operation (model added) passes through unchanged.
+    static func applyMissingResponseSchemas(_ root: Node, stats: inout Stats) -> Node {
+        guard case .mapping(var rootMap) = root,
+              case .mapping(var paths)? = rootMap["paths"]
+        else { return root }
+
+        for pathKey in Array(paths.keys) {
+            guard case .mapping(var pathItem)? = paths[pathKey] else { continue }
+            var touched = false
+            for method in Array(pathItem.keys) {
+                guard case .mapping(var op)? = pathItem[method],
+                      let opId = op["operationId"]?.string,
+                      let yaml = missingResponseSchemas[opId],
+                      let schema = try? Yams.compose(yaml: yaml),
+                      let wrapped = injectingJSONResponseSchema(schema, in: op["responses"])
+                else { continue }
+                op["responses"] = wrapped
+                pathItem[method] = .mapping(op)
+                stats.responseSchemas += 1
+                touched = true
+            }
+            if touched { paths[pathKey] = .mapping(pathItem) }
+        }
+        rootMap["paths"] = .mapping(paths)
+        return .mapping(rootMap)
+    }
+
+    /// Returns a rewritten `responses` node whose `200` carries
+    /// `content.application/json.schema = schema`, or `nil` when the 200 already
+    /// declares content or doesn't exist.
+    static func injectingJSONResponseSchema(_ schema: Node, in responses: Node?) -> Node? {
+        guard case .mapping(var responses)? = responses,
+              let okKey = responses.keys.first(where: { $0.string == "200" }),
+              case .mapping(var ok)? = responses[okKey],
+              ok["content"] == nil
+        else { return nil }
+        ok["content"] = ["application/json": ["schema": schema]]
+        responses[okKey] = .mapping(ok)
+        return .mapping(responses)
     }
 
     // MARK: Helpers

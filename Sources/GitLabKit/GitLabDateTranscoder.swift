@@ -7,6 +7,13 @@ import OpenAPIRuntime
 /// transcoder rejects the fractional form and `.iso8601WithFractionalSeconds` rejects the
 /// plain form, so a GitLab client needs one that accepts both.
 ///
+/// It also accepts a bare `YYYY-MM-DD` date, read as start-of-day UTC: GitLab `date`
+/// columns serialize without a time component, but parts of the OpenAPI spec mistype
+/// them `format: date-time` (e.g. `last_activity_on`, `marked_for_deletion_on`,
+/// `expires_at` on token entities — see the "Tech Debt" DocC article). The spec can't
+/// be trusted to label these, so the fallback covers every mistyped field, enumerated
+/// or not.
+///
 /// Layered like `YandexDeliveryExpress`'s `FlexibleISO8601Transcoder`: a modern,
 /// value-type `Date.ISO8601FormatStyle` (Sendable, no per-call allocation) is tried first,
 /// with an `ISO8601DateFormatter` fallback that reliably handles numeric timezone offsets.
@@ -25,6 +32,10 @@ public struct GitLabDateTranscoder: DateTranscoder {
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         if let date = formatter.date(from: string) { return date }
         formatter.formatOptions = [.withInternetDateTime]
+        if let date = formatter.date(from: string) { return date }
+        // Bare `YYYY-MM-DD` — a `date` column the spec mistyped `date-time`. ISO8601
+        // interprets a date with no zone as GMT, i.e. start-of-day UTC.
+        formatter.formatOptions = [.withFullDate]
         if let date = formatter.date(from: string) { return date }
         throw DecodingError.dataCorrupted(
             .init(codingPath: [], debugDescription: "Expected an ISO-8601 date, received '\(string)'.")

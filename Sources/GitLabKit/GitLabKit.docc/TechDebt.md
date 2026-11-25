@@ -14,23 +14,30 @@ at runtime were typed as a single object — in **two** places:
   `APIEntitiesMergeRequest`, `assignees` and `reviewers` were typed `APIEntitiesUserBasic?`
   (a single user) while the API returns an array.
 
-- **Upstream status (2026-11-18):** [gitlab-org/gitlab#604895](https://gitlab.com/gitlab-org/gitlab/-/issues/604895)
+- **Upstream status (2026-11-25):** [gitlab-org/gitlab#604895](https://gitlab.com/gitlab-org/gitlab/-/issues/604895)
   is `workflow::in dev` and landing as a **series of area-by-area MRs** — merged so far:
   [!268447](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/268447) (core),
   [!268849](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/268849) (EE),
-  [!270809](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/270809) (organizations);
-  open: source-code, token-associations, webhooks, geo areas. The merged MRs cover the whole
+  [!270809](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/270809) (organizations),
+  [!268850](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/268850) (source-code),
+  [!270810](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/270810) (token-associations);
+  webhooks/geo areas may still be open. The merged MRs cover the whole
   review surface: `assignees`/`reviewers`/`notes`/`suggestions` are `type: array` upstream,
   and `gitlab-spec-tool` now reports **`array fields retyped: 0`** spec-wide — the curated
   `arrayFieldNames` list has been emptied (kept as a mechanism for regressions and pinned old
   `--ref`s).
-- **Residual:** **7 paginated GETs still return single-object 200s** — the transform still
-  retypes them, and every one has an MR in flight: `repository/tree` +
-  `repository/contributors` + the four template lists are covered by the open
-  source-code MR (!268850), and `personal_access_tokens/self/associations` by the open
-  token-associations MR (!270810). Two of the seven sit inside the review tier; the rest
-  only matter for `core`/`full`. Live decode against gitlab.com passes for the review
-  entities.
+- **Residual:** none — `gitlab-spec-tool` now reports **`list responses
+  retyped: 0`**. Every previously-broken list — `repository/tree`,
+  `repository/contributors`, the four template lists (!268850) and
+  `personal_access_tokens/self/associations` (!270810) — is `type: array`
+  or correctly single-object upstream. The associations endpoint turned out
+  to be a **container, not a list**: its `page`/`per_page` params paginate
+  the `groups`/`projects` lists *inside* the `{groups, projects}` response
+  object (verified against `lib/api/personal_access_tokens/self_information.rb`),
+  so upstream's single-`$ref` was right all along — the transform had been
+  array-wrapping it since the params looked paginated. `arrayifyPaginatedResponses`
+  now skips paths in `containerResponsePaths`. Live decode against
+  gitlab.com passes for the review entities.
 - **A second flavor — scalar mismatches.** Still unfixed upstream:
   [#604896](https://gitlab.com/gitlab-org/gitlab/-/issues/604896) has no MRs yet.
   Locally mitigated by the curated `scalarFieldTypes` map in `gitlab-spec-tool`
@@ -101,3 +108,51 @@ convenience over it.
 
 ## 7. Some strange servers are generated from the ``openapi.yaml``
 See `Servers` enum. Might be upstream issue.
+
+## 8. Date-valued fields mistyped as `date-time` (upstream — mitigated)
+
+A third spec-accuracy flavor, same family as #1: GitLab `date` columns serialize as
+`YYYY-MM-DD`, but the spec — and the entity `documentation:` behind it — declares
+`format: date-time`, so the generator types them `Date` and strict decoding fails
+with `Expected an ISO-8601 date, received '2026-11-24'` (GitHub issue #5 —
+`getApiV4User` against GitLab 19.5.3). Verified against `db/structure.sql` on
+master, field by field:
+
+- **Mistyped (response entities):** `last_activity_on` on
+  `APIEntitiesUserPublic`/`APIEntitiesUserWithAdmin` (`users.last_activity_on` is
+  `date`); `marked_for_deletion_at`/`marked_for_deletion_on` on the four project
+  schemas (`projects.marked_for_deletion_at` is `date` — the `_at` name lies);
+  `expires_at` on the six personal/resource/impersonation access-token entities
+  (`personal_access_tokens.expires_at` is `date`).
+- **Mistyped (request bodies):** member and invitation `expires_at` —
+  `members.expires_at` is `date` and the descriptions already say
+  "YEAR-MONTH-DAY".
+- **Suspect, unverified:** the Epic/RelatedEpic date fields (EE; `epics` date
+  columns suggest the same defect).
+- **Checked and correct:** `enabled_until` (pages domains), the geo-status dates,
+  `merge_after`, `released_at`, and `expires_at` on keys/deploy-tokens/secure-files/
+  triggers — all backed by `timestamp` columns. Naming (`_at` vs `_on`) is not a
+  reliable signal; the column type is.
+
+- **Mitigation:** `GitLabDateTranscoder.decode` accepts a bare `YYYY-MM-DD` as
+  start-of-day UTC — covers every mistyped field, enumerated or not, present and
+  future. Retyping to `format: date` in the vendored spec was rejected: it
+  generates `String?`, a worse API than `Date?` for a date value, and only fixes
+  fields we enumerate — the spec demonstrably can't be trusted to label them.
+- **Upstream:** filed as
+  [gitlab-org/gitlab#642830](https://gitlab.com/gitlab-org/gitlab/-/work_items/642830);
+  PR handoff in `Upstream/date-vs-date-time.md`.
+  When upstream lands `type: 'Date'` corrections the fields become `String?`;
+  the transcoder stays useful for anything they miss.
+
+## 9. Full-tier spec has a path/parameter mismatch (upstream — pre-existing)
+
+`GET /api/v4/jobs/{id}/sbom_scans/{sbom_digest}` declares path param
+`sbom_scan_id` — the template says `{sbom_digest}`, the parameter list says
+`sbom_scan_id` (and the operationId agrees with the parameter, so the path key
+is the wrong half). `swift-openapi-generator` hard-fails on it
+("Parameter 'sbom_digest' … not found in the defined list of path parameters"),
+so the **full tier cannot currently generate** — present already in the v19.6
+vendored spec, unrelated to the 2026-11-25 refresh. The `review` and `core`
+tiers are unaffected (the path is outside their filters). Discharge: upstream
+fixes the path/param pairing; until then the full-tier template is unusable.

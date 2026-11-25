@@ -26,13 +26,17 @@ at runtime were typed as a single object — in **two** places:
   and `gitlab-spec-tool` now reports **`array fields retyped: 0`** spec-wide — the curated
   `arrayFieldNames` list has been emptied (kept as a mechanism for regressions and pinned old
   `--ref`s).
-- **Residual:** **1 paginated GET still returns a single-object 200** —
-  `personal_access_tokens/self/associations`. Its fix MR
-  [!270810](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/270810) merged
-  2026-11-24 but today's spec still types it single-object (spec regen may lag);
-  the transform still retypes it. Every other previously-broken list —
-  `repository/tree`, `repository/contributors`, the four template lists — is now
-  `type: array` upstream (!268850 merged 2026-11-18). Live decode against
+- **Residual:** none — `gitlab-spec-tool` now reports **`list responses
+  retyped: 0`**. Every previously-broken list — `repository/tree`,
+  `repository/contributors`, the four template lists (!268850) and
+  `personal_access_tokens/self/associations` (!270810) — is `type: array`
+  or correctly single-object upstream. The associations endpoint turned out
+  to be a **container, not a list**: its `page`/`per_page` params paginate
+  the `groups`/`projects` lists *inside* the `{groups, projects}` response
+  object (verified against `lib/api/personal_access_tokens/self_information.rb`),
+  so upstream's single-`$ref` was right all along — the transform had been
+  array-wrapping it since the params looked paginated. `arrayifyPaginatedResponses`
+  now skips paths in `containerResponsePaths`. Live decode against
   gitlab.com passes for the review entities.
 - **A second flavor — scalar mismatches.** Still unfixed upstream:
   [#604896](https://gitlab.com/gitlab-org/gitlab/-/issues/604896) has no MRs yet.
@@ -138,3 +142,15 @@ master, field by field:
 - **Upstream:** draft issue + PR handoff in `Upstream/date-vs-date-time.md`.
   When upstream lands `type: 'Date'` corrections the fields become `String?`;
   the transcoder stays useful for anything they miss.
+
+## 9. Full-tier spec has a path/parameter mismatch (upstream — pre-existing)
+
+`GET /api/v4/jobs/{id}/sbom_scans/{sbom_digest}` declares path param
+`sbom_scan_id` — the template says `{sbom_digest}`, the parameter list says
+`sbom_scan_id` (and the operationId agrees with the parameter, so the path key
+is the wrong half). `swift-openapi-generator` hard-fails on it
+("Parameter 'sbom_digest' … not found in the defined list of path parameters"),
+so the **full tier cannot currently generate** — present already in the v19.6
+vendored spec, unrelated to the 2026-11-25 refresh. The `review` and `core`
+tiers are unaffected (the path is outside their filters). Discharge: upstream
+fixes the path/param pairing; until then the full-tier template is unusable.

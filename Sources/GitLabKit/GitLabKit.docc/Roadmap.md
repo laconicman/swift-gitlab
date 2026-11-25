@@ -22,11 +22,12 @@ The array under-typing is mostly fixed upstream (see <doc:TechDebt> #1); the
 
 Retire the remaining local retyping at the source — see the <doc:UpstreamSpecFix> handoff
 for the detailed plan. [#604895](https://gitlab.com/gitlab-org/gitlab/-/issues/604895) is
-landing area by area (5 MRs merged, webhooks/geo possibly open as of 2026-11-25); each
+landing area by area (6 MRs merged, webhooks/geo possibly open as of 2026-11-25); each
 merged area makes the corresponding local transform a no-op — the array-field list is
-already empty and only 1 list response still needs retyping
-(`personal_access_tokens/self/associations`; its MR !270810 merged 2026-11-24, spec
-regen may lag). [#604897](https://gitlab.com/gitlab-org/gitlab/-/issues/604897)
+empty and **all** list responses are now correctly typed upstream, so
+`arrayifyPaginatedResponses` reports 0 (it skips `containerResponsePaths` like
+`personal_access_tokens/self/associations`, whose params paginate lists *inside*
+the response object). [#604897](https://gitlab.com/gitlab-org/gitlab/-/issues/604897)
 (`RequestBody_<hash>` names) is **closed** — grape-openapi 0.7.0 emits stable names, so the
 vendored spec went from 422 anonymous schemas to 0. A third defect family —
 `date` columns typed `format: date-time` — is mitigated locally by the transcoder's

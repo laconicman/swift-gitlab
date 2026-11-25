@@ -64030,6 +64030,52 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  state:
+                    type: string
+                    nullable: true
+                    description: Which side owns the repository. After a restore,
+                      this is the state the repository had before it was disconnected,
+                      usually `provider_canonical`.
+                  read_only:
+                    type: boolean
+                    nullable: true
+                    description: If `true`, the project is read-only because GitHub
+                      is the source of truth.
+                  final_pass_incomplete:
+                    type: boolean
+                    nullable: true
+                    description: If `true`, a stop finished without every data type
+                      being current.
+                  data:
+                    type: object
+                    additionalProperties:
+                      type: object
+                      properties:
+                        state:
+                          type: string
+                          nullable: true
+                          description: State of the updates for this type of data.
+                        last_updated_at:
+                          type: string
+                          format: date-time
+                          nullable: true
+                          description: Time of the last successful update, in ISO
+                            8601 format.
+                        last_checked_at:
+                          type: string
+                          format: date-time
+                          nullable: true
+                          description: Time of the last check, in ISO 8601 format.
+                  warning:
+                    type: string
+                    nullable: true
+                    description: Only present when the webhook could not be created.
+                      Explains that changes are checked on a schedule.
         '400':
           description: Bad request
         '401':

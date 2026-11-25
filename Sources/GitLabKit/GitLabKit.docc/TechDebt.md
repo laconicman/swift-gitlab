@@ -139,7 +139,9 @@ master, field by field:
   future. Retyping to `format: date` in the vendored spec was rejected: it
   generates `String?`, a worse API than `Date?` for a date value, and only fixes
   fields we enumerate — the spec demonstrably can't be trusted to label them.
-- **Upstream:** draft issue + PR handoff in `Upstream/date-vs-date-time.md`.
+- **Upstream:** filed as
+  [gitlab-org/gitlab#642830](https://gitlab.com/gitlab-org/gitlab/-/work_items/642830);
+  PR handoff in `Upstream/date-vs-date-time.md`.
   When upstream lands `type: 'Date'` corrections the fields become `String?`;
   the transcoder stays useful for anything they miss.
 

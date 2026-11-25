@@ -31,7 +31,9 @@ the response object). [#604897](https://gitlab.com/gitlab-org/gitlab/-/issues/60
 (`RequestBody_<hash>` names) is **closed** — grape-openapi 0.7.0 emits stable names, so the
 vendored spec went from 422 anonymous schemas to 0. A third defect family —
 `date` columns typed `format: date-time` — is mitigated locally by the transcoder's
-date-only branch; the upstream draft lives in `Upstream/date-vs-date-time.md`.
+date-only branch; upstream issue
+[gitlab-org/gitlab#642830](https://gitlab.com/gitlab-org/gitlab/-/work_items/642830)
+filed, handoff in `Upstream/date-vs-date-time.md`.
 
 ## OAuth2 with refresh
 

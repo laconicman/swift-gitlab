@@ -12,8 +12,9 @@ markdown, ready to paste into the tracker. The **PR handoff** is the implementat
 > were restored *without* a webhook (degraded to scheduled checks). Local mitigation
 > shipped in GitLabKit: `gitlab-spec-tool` transform 6 (`missingResponseSchemas`)
 > injects a hand-authored schema — verified field-for-field against the presenter.
-> **Issue draft below is ready to file** (no tracker credentials handy at writing
-> time); this note is the record either way.
+> **Filed upstream as
+> [gitlab-org/gitlab#642831](https://gitlab.com/gitlab-org/gitlab/-/work_items/642831)**
+> on 2026-11-25; the PR handoff below is the implementation guide.
 
 ---
 

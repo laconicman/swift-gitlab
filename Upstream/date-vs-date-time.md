@@ -8,8 +8,9 @@ markdown, ready to paste into the tracker. The **PR handoff** is the implementat
 > `documentation:`, so the API emits `YYYY-MM-DD` while the spec promises a timestamp.
 > Local mitigation shipped in GitLabKit: `GitLabDateTranscoder.decode` accepts a bare
 > `YYYY-MM-DD` (start-of-day UTC), which covers every mistyped field — enumerated or
-> not. **Issue draft below is ready to file** (no tracker credentials handy at writing
-> time); this note is the record either way.
+> not. **Filed upstream as
+> [gitlab-org/gitlab#642830](https://gitlab.com/gitlab-org/gitlab/-/work_items/642830)**
+> on 2026-11-25; the PR handoff below is the implementation guide.
 
 ---
 

@@ -11,6 +11,9 @@ markdown, ready to paste into the tracker. The **PR handoff** is the implementat
 > not. **Filed upstream as
 > [gitlab-org/gitlab#642830](https://gitlab.com/gitlab-org/gitlab/-/work_items/642830)**
 > on 2026-11-25; the PR handoff below is the implementation guide.
+> **MR open 2026-11-26:** [!274692](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/274692)
+> (Draft) — patch verified against master; epic `*_from_*` fields excluded (they emit real
+> timestamps, see #642892); member/invitation `expires_at` under-spec split to #642891.
 
 ---
 

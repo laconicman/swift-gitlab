@@ -11,6 +11,9 @@ markdown, ready to paste into the tracker. The **PR handoff** is the implementat
 > not. **Filed upstream as
 > [gitlab-org/gitlab#642830](https://gitlab.com/gitlab-org/gitlab/-/work_items/642830)**
 > on 2026-11-25; the PR handoff below is the implementation guide.
+> **MR open 2026-11-26:** [!274692](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/274692)
+> (Draft) — patch verified against master; epic `*_from_*` fields excluded (they emit real
+> timestamps, see #642892); member/invitation `expires_at` under-spec split to #642891.
 
 ---
 
@@ -84,8 +87,18 @@ decoding it against the spec's `format: date-time` fails in a strict client.
 
 ## PR handoff
 
-**Goal:** correct `format:` on date-valued fields in `openapi_v3.yaml` — a
-spec-generation-metadata change, **no API behaviour change**.
+**Executed 2026-11-26 as
+[!274692](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/274692) (Draft)** —
+one MR, not the per-area series sketched below. `openapi_v3.yaml` was hand-synced
+(no dev env to run `rake gitlab:openapi:v3:generate`), so `check_docs` CI is the
+byte-exact arbiter once a maintainer approves the pipeline.
+
+**Goal:** correct `format:` on date-valued fields in `openapi_v3.yaml`. The entity
+`documentation:` edits are generation metadata; the request-param `type:` edits
+narrow Grape coercion `DateTime` → `Date` — `Date.parse` accepts `YYYY-MM-DD` and
+full timestamps alike and `members.expires_at` is a `date` column, so the stored
+value is unchanged (verified against `Date.parse`/`DateTime.parse`, not a live
+request — `check_docs` compares spec bytes only).
 
 **Where it originates**
 - Grape entity exposures (`lib/api/entities/**.rb`, `ee/lib/api/entities/**.rb`):
@@ -94,14 +107,30 @@ spec-generation-metadata change, **no API behaviour change**.
 - Examples matter too: `example: '2015-09-03T07:24:01.670Z'` on a `date` field
   should become `example: '2015-09-03'`.
 
-**Shape**
-- One MR per area is reviewable: users (`last_activity_on`), projects
-  (`marked_for_deletion_*`), access tokens (`expires_at`), members/invitations
-  request bodies (`expires_at`), epics (EE, after live verification).
-- Each is a small `documentation:` edit plus spec regeneration.
+**Shape — as shipped in !274692**
+- `lib/api/entities/user_public.rb` — `last_activity_on` → `'Date'`
+  (covers `UserWithAdmin < UserPublic`).
+- `lib/api/entities/project.rb` — `marked_for_deletion_at` + `marked_for_deletion_on`
+  → `'Date'` (covers the `ProjectWithAccess` / catalog-settings family).
+- `lib/api/entities/personal_access_token.rb` — `expires_at` → `'Date'`
+  (covers all six token schemas via inheritance: personal/resource/impersonation,
+  each with a `…WithToken` variant).
+- `lib/api/members.rb`, `lib/api/invitations.rb` — param `type: DateTime` → `Date`
+  on POST/PUT `expires_at` (all four member + four invitation request schemas).
+- `ee/lib/api/entities/epic.rb` — only the five fields that emit `YYYY-MM-DD`:
+  `start_date`, `start_date_fixed`, `end_date`, `due_date`, `due_date_fixed`.
+  The four `*_from_*` fields stay `date-time`: `WorkItemAsEpic` runs them through
+  `.to_time.iso8601`, so the wire value is a real timestamp and retyping them
+  would make the spec wrong — their server-timezone serialization wart is
+  [#642892](https://gitlab.com/gitlab-org/gitlab/-/work_items/642892).
+- Member/invitation **`expires_at` response** exposures (`entities/member.rb`,
+  `entities/invitation.rb`) carry no `documentation:` at all — the spec emits
+  plain `type: string`, a different defect; filed as
+  [#642891](https://gitlab.com/gitlab-org/gitlab/-/work_items/642891).
 
 **Validation**
-- Regenerate the spec; confirm the listed properties become `format: date`.
+- `gitlab:openapi:v3:check_docs` regenerates and compares byte-exact — it is the
+  arbiter for the hand-synced yaml.
 - On the consumer side: a strict typed client decoding `GET /api/v4/user` stops
   throwing on `last_activity_on`.
 

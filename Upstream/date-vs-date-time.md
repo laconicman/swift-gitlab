@@ -93,8 +93,12 @@ one MR, not the per-area series sketched below. `openapi_v3.yaml` was hand-synce
 (no dev env to run `rake gitlab:openapi:v3:generate`), so `check_docs` CI is the
 byte-exact arbiter once a maintainer approves the pipeline.
 
-**Goal:** correct `format:` on date-valued fields in `openapi_v3.yaml` — a
-spec-generation-metadata change, **no API behaviour change**.
+**Goal:** correct `format:` on date-valued fields in `openapi_v3.yaml`. The entity
+`documentation:` edits are generation metadata; the request-param `type:` edits
+narrow Grape coercion `DateTime` → `Date` — `Date.parse` accepts `YYYY-MM-DD` and
+full timestamps alike and `members.expires_at` is a `date` column, so the stored
+value is unchanged (verified against `Date.parse`/`DateTime.parse`, not a live
+request — `check_docs` compares spec bytes only).
 
 **Where it originates**
 - Grape entity exposures (`lib/api/entities/**.rb`, `ee/lib/api/entities/**.rb`):
@@ -109,7 +113,8 @@ spec-generation-metadata change, **no API behaviour change**.
 - `lib/api/entities/project.rb` — `marked_for_deletion_at` + `marked_for_deletion_on`
   → `'Date'` (covers the `ProjectWithAccess` / catalog-settings family).
 - `lib/api/entities/personal_access_token.rb` — `expires_at` → `'Date'`
-  (covers all five token schemas via inheritance).
+  (covers all six token schemas via inheritance: personal/resource/impersonation,
+  each with a `…WithToken` variant).
 - `lib/api/members.rb`, `lib/api/invitations.rb` — param `type: DateTime` → `Date`
   on POST/PUT `expires_at` (all four member + four invitation request schemas).
 - `ee/lib/api/entities/epic.rb` — only the five fields that emit `YYYY-MM-DD`:
